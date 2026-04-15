@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}系统提示{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <h1>系统提示</h1>
+    <p>请求没有完成，系统已经记录运行日志。</p>
+</div>
+<div class="alert alert-warning" role="alert">
+    {{ message }}
+</div>
+<a class="btn btn-primary" href="/">返回首页</a>
+{% endblock %}

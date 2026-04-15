@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}历史记录 - 中文文本情感分析系统{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <h1>历史记录</h1>
+    <p>按时间倒序查看单文本分析历史、批量分析历史和训练任务历史。</p>
+</div>
+
+<ul class="nav nav-tabs" id="historyTabs" role="tablist">
+    <li class="nav-item" role="presentation"><button class="nav-link active" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysis-pane" type="button" role="tab">单文本分析</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch-pane" type="button" role="tab">批量分析</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" id="train-tab" data-bs-toggle="tab" data-bs-target="#train-pane" type="button" role="tab">训练任务</button></li>
+</ul>
+<div class="tab-content content-panel border-top-0" id="historyTabsContent">
+    <div class="tab-pane fade show active" id="analysis-pane" role="tabpanel" tabindex="0">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr><th>ID</th><th>文本</th><th>结果</th><th>置信度</th><th>模型</th><th>时间</th></tr></thead>
+                <tbody>
+                {% for record in analysis_records %}
+                <tr>
+                    <td>{{ record.id }}</td>
+                    <td class="table-text">{{ record.input_text }}</td>
+                    <td>{{ record.predicted_label }}</td>
+                    <td>{{ "%.4f"|format(record.confidence) }}</td>
+                    <td class="table-text">{{ record.model_name }}</td>
+                    <td>{{ record.created_at }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-muted">暂无单文本分析记录</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="tab-pane fade" id="batch-pane" role="tabpanel" tabindex="0">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr><th>ID</th><th>文件名</th><th>总数</th><th>积极</th><th>消极</th><th>状态</th><th>时间</th></tr></thead>
+                <tbody>
+                {% for task in batch_tasks %}
+                <tr>
+                    <td>{{ task.id }}</td>
+                    <td class="table-text">{{ task.original_file_name }}</td>
+                    <td>{{ task.total_count }}</td>
+                    <td>{{ task.positive_count }}</td>
+                    <td>{{ task.negative_count }}</td>
+                    <td>{{ task.status }}</td>
+                    <td>{{ task.created_at }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-muted">暂无批量分析记录</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="tab-pane fade" id="train-pane" role="tabpanel" tabindex="0">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr><th>ID</th><th>模型</th><th>数据集</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>状态</th><th>完成时间</th></tr></thead>
+                <tbody>
+                {% for task in train_tasks %}
+                <tr>
+                    <td>{{ task.id }}</td>
+                    <td class="table-text">{{ task.model_name }}</td>
+                    <td>{{ task.dataset_name }}</td>
+                    <td>{{ "%.4f"|format(task.accuracy) if task.accuracy is not none else "-" }}</td>
+                    <td>{{ "%.4f"|format(task.precision_score) if task.precision_score is not none else "-" }}</td>
+                    <td>{{ "%.4f"|format(task.recall_score) if task.recall_score is not none else "-" }}</td>
+                    <td>{{ "%.4f"|format(task.f1_score) if task.f1_score is not none else "-" }}</td>
+                    <td>{{ task.status }}</td>
+                    <td>{{ task.finished_at }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="9" class="text-muted">暂无训练任务记录</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

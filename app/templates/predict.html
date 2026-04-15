@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}单文本分析 - 中文文本情感分析系统{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <h1>单文本情感分析</h1>
+    <p>输入一段中文文本，系统返回二分类情感标签、置信度、积极概率和消极概率。</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <section class="content-panel">
+            <label for="inputText" class="form-label fw-semibold">待分析文本</label>
+            <textarea id="inputText" class="form-control" rows="7" placeholder="请输入中文文本"></textarea>
+            <div class="d-flex align-items-center gap-3 mt-3">
+                <button id="predictBtn" class="btn btn-primary" type="button">开始分析</button>
+                <span id="predictStatus" class="text-muted small"></span>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-5">
+        <section class="content-panel result-panel">
+            <div class="section-title">分析结果</div>
+            <div id="predictResult" class="text-muted">结果将在这里展示。</div>
+        </section>
+    </div>
+</div>
+
+<section class="content-panel mt-4">
+    <div class="section-title">最近 10 条分析记录</div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle" id="recentTable">
+            <thead><tr><th>ID</th><th>文本</th><th>结果</th><th>置信度</th><th>积极概率</th><th>消极概率</th><th>时间</th></tr></thead>
+            <tbody>
+            {% for record in recent_records %}
+            <tr>
+                <td>{{ record.id }}</td>
+                <td class="table-text">{{ record.input_text }}</td>
+                <td>{{ record.predicted_label }}</td>
+                <td>{{ "%.4f"|format(record.confidence) }}</td>
+                <td>{{ "%.4f"|format(record.positive_score) }}</td>
+                <td>{{ "%.4f"|format(record.negative_score) }}</td>
+                <td>{{ record.created_at }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-muted">暂无分析记录</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('predictBtn').addEventListener('click', async () => {
+    const text = document.getElementById('inputText').value.trim();
+    const statusEl = document.getElementById('predictStatus');
+    const resultEl = document.getElementById('predictResult');
+    if (!text) {
+        statusEl.textContent = '请输入文本内容';
+        return;
+    }
+    statusEl.textContent = '正在分析...';
+    resultEl.innerHTML = '';
+    const response = await apiPost('/api/predict', {text});
+    if (response.code !== 0) {
+        statusEl.textContent = response.message;
+        resultEl.innerHTML = `<div class="alert alert-warning">${escapeHtml(response.message)}</div>`;
+        return;
+    }
+    const data = response.data;
+    statusEl.textContent = '分析完成';
+    resultEl.innerHTML = `
+        <div class="result-label ${data.predicted_label === '积极' ? 'text-success' : 'text-danger'}">${data.predicted_label}</div>
+        <div class="metric-row"><span>置信度</span><strong>${formatPercent(data.confidence)}</strong></div>
+        <div class="metric-row"><span>积极概率</span><strong>${formatPercent(data.positive_score)}</strong></div>
+        <div class="metric-row"><span>消极概率</span><strong>${formatPercent(data.negative_score)}</strong></div>
+        <div class="small text-muted mt-2">模型：${escapeHtml(data.model_name)}</div>
+    `;
+});
+</script>
+{% endblock %}

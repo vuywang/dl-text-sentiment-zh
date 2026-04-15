@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}模型训练 - 中文文本情感分析系统{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <h1>模型训练</h1>
+    <p>训练数据集固定为 ChnSentiCorp，预训练模型固定为 google-bert/bert-base-chinese，任务固定为中文文本情感二分类。</p>
+</div>
+
+<section class="content-panel">
+    <form id="trainForm" class="row g-3">
+        <div class="col-md-3">
+            <label for="epoch" class="form-label fw-semibold">epoch</label>
+            <input id="epoch" name="epoch" class="form-control" type="number" min="1" max="20" value="1" required>
+        </div>
+        <div class="col-md-3">
+            <label for="batchSize" class="form-label fw-semibold">batch_size</label>
+            <input id="batchSize" name="batch_size" class="form-control" type="number" min="1" max="128" value="8" required>
+        </div>
+        <div class="col-md-3">
+            <label for="learningRate" class="form-label fw-semibold">learning_rate</label>
+            <input id="learningRate" name="learning_rate" class="form-control" type="number" step="0.000001" value="0.00002" required>
+        </div>
+        <div class="col-md-3">
+            <label for="maxLength" class="form-label fw-semibold">max_length</label>
+            <input id="maxLength" name="max_length" class="form-control" type="number" min="16" max="512" value="128" required>
+        </div>
+        <div class="col-12">
+            <button class="btn btn-primary" type="submit">开始训练</button>
+            <span id="trainStatus" class="small text-muted ms-3"></span>
+        </div>
+    </form>
+</section>
+
+<section id="trainDetailPanel" class="content-panel mt-4 d-none">
+    <div class="section-title">训练任务指标</div>
+    <div id="trainDetail"></div>
+</section>
+
+<section class="content-panel mt-4">
+    <div class="section-title">最近训练任务</div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead><tr><th>ID</th><th>模型</th><th>epoch</th><th>batch</th><th>学习率</th><th>准确率</th><th>F1</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+            {% for task in recent_train_tasks %}
+            <tr>
+                <td>{{ task.id }}</td>
+                <td class="table-text">{{ task.model_name }}</td>
+                <td>{{ task.epoch_count }}</td>
+                <td>{{ task.batch_size }}</td>
+                <td>{{ task.learning_rate }}</td>
+                <td>{{ "%.4f"|format(task.accuracy) if task.accuracy is not none else "-" }}</td>
+                <td>{{ "%.4f"|format(task.f1_score) if task.f1_score is not none else "-" }}</td>
+                <td><span class="badge text-bg-secondary">{{ task.status }}</span></td>
+                <td><button class="btn btn-sm btn-outline-primary" type="button" onclick="loadTrainDetail({{ task.id }})">查看</button></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" class="text-muted">暂无训练任务</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('trainForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const payload = {
+        epoch: Number(document.getElementById('epoch').value),
+        batch_size: Number(document.getElementById('batchSize').value),
+        learning_rate: Number(document.getElementById('learningRate').value),
+        max_length: Number(document.getElementById('maxLength').value)
+    };
+    const statusEl = document.getElementById('trainStatus');
+    statusEl.textContent = '训练任务正在创建...';
+    const response = await apiPost('/api/train/start', payload);
+    if (response.code !== 0) {
+        statusEl.textContent = response.message;
+        return;
+    }
+    statusEl.textContent = `训练任务已启动，任务 ID：${response.data.id}`;
+    loadTrainDetail(response.data.id);
+});
+
+async function loadTrainDetail(taskId) {
+    const response = await fetch(`/api/train/${taskId}`);
+    const payload = await response.json();
+    const panel = document.getElementById('trainDetailPanel');
+    const detail = document.getElementById('trainDetail');
+    panel.classList.remove('d-none');
+    if (payload.code !== 0) {
+        detail.innerHTML = `<div class="alert alert-warning">${escapeHtml(payload.message)}</div>`;
+        return;
+    }
+    const task = payload.data;
+    detail.innerHTML = `
+        <div class="row g-3">
+            <div class="col-md-3"><div class="summary-card"><div class="summary-label">状态</div><div class="summary-value">${escapeHtml(task.status)}</div></div></div>
+            <div class="col-md-3"><div class="summary-card"><div class="summary-label">Accuracy</div><div class="summary-value">${formatMetric(task.accuracy)}</div></div></div>
+            <div class="col-md-3"><div class="summary-card"><div class="summary-label">Precision</div><div class="summary-value">${formatMetric(task.precision_score)}</div></div></div>
+            <div class="col-md-3"><div class="summary-card"><div class="summary-label">F1-score</div><div class="summary-value">${formatMetric(task.f1_score)}</div></div></div>
+        </div>
+        <div class="mt-3 small text-muted">模型目录：${escapeHtml(task.model_dir || '-')}</div>
+    `;
+}
+</script>
+{% endblock %}

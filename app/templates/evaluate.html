@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}模型评估 - 中文文本情感分析系统{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <h1>模型评估</h1>
+    <p>展示当前已完成训练任务的指标、混淆矩阵、训练损失曲线和测试样例预测结果。</p>
+</div>
+
+{% if latest_task %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="summary-card"><div class="summary-label">Accuracy</div><div class="summary-value">{{ "%.4f"|format(latest_task.accuracy) }}</div></div></div>
+    <div class="col-md-3"><div class="summary-card"><div class="summary-label">Precision</div><div class="summary-value">{{ "%.4f"|format(latest_task.precision_score) }}</div></div></div>
+    <div class="col-md-3"><div class="summary-card"><div class="summary-label">Recall</div><div class="summary-value">{{ "%.4f"|format(latest_task.recall_score) }}</div></div></div>
+    <div class="col-md-3"><div class="summary-card"><div class="summary-label">F1-score</div><div class="summary-value">{{ "%.4f"|format(latest_task.f1_score) }}</div></div></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <section class="content-panel">
+            <div class="section-title">混淆矩阵图</div>
+            {% if confusion_matrix_url %}
+            <img class="result-image" src="{{ confusion_matrix_url }}" alt="混淆矩阵图">
+            {% else %}
+            <div class="text-muted">混淆矩阵图片尚未生成。</div>
+            {% endif %}
+        </section>
+    </div>
+    <div class="col-lg-6">
+        <section class="content-panel">
+            <div class="section-title">训练损失曲线</div>
+            {% if loss_curve_url %}
+            <img class="result-image" src="{{ loss_curve_url }}" alt="训练损失曲线">
+            {% else %}
+            <div class="text-muted">训练损失曲线尚未生成。</div>
+            {% endif %}
+        </section>
+    </div>
+    <div class="col-12">
+        <section class="content-panel">
+            <div class="section-title">测试样例预测结果</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead><tr><th>文本</th><th>预测标签</th><th>置信度</th><th>积极概率</th><th>消极概率</th></tr></thead>
+                    <tbody>
+                    {% for item in sample_predictions %}
+                    <tr>
+                        <td class="table-text">{{ item.text }}</td>
+                        {% if item.error is defined %}
+                        <td colspan="4" class="text-warning">{{ item.error }}</td>
+                        {% else %}
+                        <td>{{ item.predicted_label }}</td>
+                        <td>{{ "%.4f"|format(item.confidence) }}</td>
+                        <td>{{ "%.4f"|format(item.positive_score) }}</td>
+                        <td>{{ "%.4f"|format(item.negative_score) }}</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info" role="alert">
+    暂无已完成训练任务。请先在模型训练页面启动并完成一次训练。
+</div>
+{% endif %}
+{% endblock %}

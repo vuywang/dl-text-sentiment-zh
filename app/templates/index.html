@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}首页 - 中文文本情感分析系统{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <h1>{{ project_name }}</h1>
+    <p>本系统使用 FastAPI、Jinja2、Bootstrap、ECharts、PyTorch、Transformers 与 SQLite 实现中文文本情感二分类分析、批量推理、模型训练、模型评估和历史记录管理。</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="summary-card">
+            <div class="summary-label">当前激活模型</div>
+            <div class="summary-value text-truncate">{{ active_model.model_name }}</div>
+            <div class="small text-muted">{{ active_model.model_type }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="summary-card">
+            <div class="summary-label">数据库状态</div>
+            <div class="summary-value">{{ db_status }}</div>
+            <div class="small text-muted text-truncate">{{ db_path }}</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="summary-card">
+            <div class="summary-label">分析总数</div>
+            <div class="summary-value">{{ stats.total_count }}</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="summary-card">
+            <div class="summary-label">积极</div>
+            <div class="summary-value text-success">{{ stats.positive_count }}</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="summary-card">
+            <div class="summary-label">消极</div>
+            <div class="summary-value text-danger">{{ stats.negative_count }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <section class="content-panel">
+            <div class="section-title">情感类别总体统计</div>
+            <div id="sentimentPie" class="chart-box"></div>
+        </section>
+    </div>
+    <div class="col-lg-7">
+        <section class="content-panel">
+            <div class="section-title">最近训练记录</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead><tr><th>ID</th><th>模型</th><th>状态</th><th>准确率</th><th>创建时间</th></tr></thead>
+                    <tbody>
+                    {% for task in recent_train_tasks %}
+                    <tr>
+                        <td>{{ task.id }}</td>
+                        <td class="text-truncate table-text">{{ task.model_name }}</td>
+                        <td><span class="badge text-bg-secondary">{{ task.status }}</span></td>
+                        <td>{{ "%.4f"|format(task.accuracy) if task.accuracy is not none else "-" }}</td>
+                        <td>{{ task.created_at }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-muted">暂无训练记录</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+    <div class="col-12">
+        <section class="content-panel">
+            <div class="section-title">最近分析记录</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead><tr><th>ID</th><th>文本</th><th>结果</th><th>置信度</th><th>模型</th><th>时间</th></tr></thead>
+                    <tbody>
+                    {% for record in recent_analysis_records %}
+                    <tr>
+                        <td>{{ record.id }}</td>
+                        <td class="table-text">{{ record.input_text }}</td>
+                        <td>{{ record.predicted_label }}</td>
+                        <td>{{ "%.4f"|format(record.confidence) }}</td>
+                        <td class="text-truncate table-text">{{ record.model_name }}</td>
+                        <td>{{ record.created_at }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-muted">暂无分析记录</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const pieData = [
+    {name: '积极', value: {{ stats.positive_count }}},
+    {name: '消极', value: {{ stats.negative_count }}}
+];
+renderPieChart('sentimentPie', pieData, '情感占比');
+</script>
+{% endblock %}

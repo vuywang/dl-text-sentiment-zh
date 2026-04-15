@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}批量分析 - 中文文本情感分析系统{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <h1>批量 CSV 情感分析</h1>
+    <p>上传包含 <span class="code-chip">text</span> 列的 CSV 文件，系统将逐行生成情感分析结果并导出 CSV。</p>
+</div>
+
+<section class="content-panel">
+    <form id="batchForm" class="row g-3 align-items-end">
+        <div class="col-lg-8">
+            <label for="csvFile" class="form-label fw-semibold">CSV 文件</label>
+            <input class="form-control" type="file" id="csvFile" name="file" accept=".csv" required>
+        </div>
+        <div class="col-lg-4">
+            <button class="btn btn-primary w-100" type="submit">上传并分析</button>
+        </div>
+    </form>
+    <div id="batchStatus" class="small text-muted mt-3"></div>
+</section>
+
+<div id="batchResultArea" class="row g-4 mt-1 d-none">
+    <div class="col-lg-4">
+        <section class="content-panel">
+            <div class="section-title">本次任务统计</div>
+            <div id="batchSummary"></div>
+            <a id="batchDownload" class="btn btn-outline-primary mt-3" href="#" target="_blank">下载结果 CSV</a>
+        </section>
+    </div>
+    <div class="col-lg-8">
+        <section class="content-panel">
+            <div class="section-title">积极/消极占比</div>
+            <div id="batchPie" class="chart-box"></div>
+        </section>
+    </div>
+    <div class="col-12">
+        <section class="content-panel">
+            <div class="section-title">结果预览</div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle" id="batchPreviewTable">
+                    <thead><tr><th>文本</th><th>结果</th><th>置信度</th><th>积极概率</th><th>消极概率</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+<section class="content-panel mt-4">
+    <div class="section-title">最近批量任务</div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead><tr><th>ID</th><th>文件名</th><th>总数</th><th>积极</th><th>消极</th><th>状态</th><th>时间</th></tr></thead>
+            <tbody>
+            {% for task in recent_batch_tasks %}
+            <tr>
+                <td>{{ task.id }}</td>
+                <td class="table-text">{{ task.original_file_name }}</td>
+                <td>{{ task.total_count }}</td>
+                <td>{{ task.positive_count }}</td>
+                <td>{{ task.negative_count }}</td>
+                <td><span class="badge text-bg-secondary">{{ task.status }}</span></td>
+                <td>{{ task.created_at }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-muted">暂无批量任务</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('batchForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const fileInput = document.getElementById('csvFile');
+    const statusEl = document.getElementById('batchStatus');
+    if (!fileInput.files.length) {
+        statusEl.textContent = '请选择 CSV 文件';
+        return;
+    }
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    statusEl.textContent = '正在上传并分析，请等待...';
+    const response = await fetch('/api/batch/upload', {method: 'POST', body: formData});
+    const payload = await response.json();
+    if (payload.code !== 0) {
+        statusEl.textContent = payload.message;
+        return;
+    }
+    statusEl.textContent = '批量分析完成';
+    const data = payload.data;
+    const task = data.task;
+    document.getElementById('batchResultArea').classList.remove('d-none');
+    document.getElementById('batchSummary').innerHTML = `
+        <div class="metric-row"><span>任务 ID</span><strong>${task.id}</strong></div>
+        <div class="metric-row"><span>文本总数</span><strong>${task.total_count}</strong></div>
+        <div class="metric-row"><span>积极数量</span><strong>${task.positive_count}</strong></div>
+        <div class="metric-row"><span>消极数量</span><strong>${task.negative_count}</strong></div>
+        <div class="metric-row"><span>任务状态</span><strong>${escapeHtml(task.status)}</strong></div>
+    `;
+    document.getElementById('batchDownload').href = `/api/batch/${task.id}/download`;
+    renderPieChart('batchPie', data.chart, '本次批量分析');
+    const tbody = document.querySelector('#batchPreviewTable tbody');
+    tbody.innerHTML = data.preview.map(row => `
+        <tr>
+            <td class="table-text">${escapeHtml(row.text)}</td>
+            <td>${escapeHtml(row.predicted_label)}</td>
+            <td>${formatPercent(row.confidence)}</td>
+            <td>${formatPercent(row.positive_score)}</td>
+            <td>${formatPercent(row.negative_score)}</td>
+        </tr>
+    `).join('');
+});
+</script>
+{% endblock %}
