@@ -70,7 +70,7 @@ def resolve_output_path(raw_path: str, task_id: int) -> Path:
     return output_path
 
 
-def save_analysis_record(db, text: str, result: dict[str, float | str]) -> None:
+def save_analysis_record(db, text: str, result: dict[str, float | str], batch_task_id: int) -> None:
     db.add(
         AnalysisRecord(
             input_text=text,
@@ -79,6 +79,8 @@ def save_analysis_record(db, text: str, result: dict[str, float | str]) -> None:
             positive_score=float(result["positive_score"]),
             negative_score=float(result["negative_score"]),
             model_name=str(result["model_name"]),
+            source_type="batch",
+            batch_task_id=batch_task_id,
         )
     )
 
@@ -122,7 +124,7 @@ def run_batch_predict(args: argparse.Namespace) -> dict[str, object]:
                 negative_count += 1
 
             if not args.no_history:
-                save_analysis_record(db, text, result)
+                save_analysis_record(db, text, result, task.id)
 
             rows.append(
                 {

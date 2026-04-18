@@ -48,6 +48,7 @@ def train_task_to_dict(task: TrainTask) -> dict[str, object]:
 def list_analysis_records(db: Session, limit: int = 100) -> list[dict[str, object]]:
     records = (
         db.query(AnalysisRecord)
+        .filter(AnalysisRecord.source_type == "single")
         .order_by(AnalysisRecord.created_at.desc())
         .limit(limit)
         .all()
@@ -63,6 +64,65 @@ def list_batch_tasks(db: Session, limit: int = 100) -> list[dict[str, object]]:
 def list_train_tasks(db: Session, limit: int = 100) -> list[dict[str, object]]:
     tasks = db.query(TrainTask).order_by(TrainTask.created_at.desc()).limit(limit).all()
     return [train_task_to_dict(task) for task in tasks]
+
+
+def delete_analysis_records(db: Session, ids: list[int]) -> int:
+    clean_ids = sorted({record_id for record_id in ids if record_id > 0})
+    if not clean_ids:
+        return 0
+    deleted_count = (
+        db.query(AnalysisRecord)
+        .filter(
+            AnalysisRecord.source_type == "single",
+            AnalysisRecord.id.in_(clean_ids),
+        )
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return int(deleted_count)
+
+
+def clear_analysis_records(db: Session) -> int:
+    deleted_count = (
+        db.query(AnalysisRecord)
+        .filter(AnalysisRecord.source_type == "single")
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return int(deleted_count)
+
+
+def delete_batch_tasks(db: Session, ids: list[int]) -> dict[str, int]:
+    clean_ids = sorted({task_id for task_id in ids if task_id > 0})
+    if not clean_ids:
+        return {"batch_count": 0, "detail_count": 0}
+
+    detail_count = (
+        db.query(AnalysisRecord)
+        .filter(
+            AnalysisRecord.source_type == "batch",
+            AnalysisRecord.batch_task_id.in_(clean_ids),
+        )
+        .delete(synchronize_session=False)
+    )
+    batch_count = (
+        db.query(BatchTask)
+        .filter(BatchTask.id.in_(clean_ids))
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return {"batch_count": int(batch_count), "detail_count": int(detail_count)}
+
+
+def clear_batch_tasks(db: Session) -> dict[str, int]:
+    detail_count = (
+        db.query(AnalysisRecord)
+        .filter(AnalysisRecord.source_type == "batch")
+        .delete(synchronize_session=False)
+    )
+    batch_count = db.query(BatchTask).delete(synchronize_session=False)
+    db.commit()
+    return {"batch_count": int(batch_count), "detail_count": int(detail_count)}
 
 
 def recent_train_tasks(db: Session, limit: int = 5) -> list[dict[str, object]]:

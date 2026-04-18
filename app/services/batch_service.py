@@ -13,7 +13,12 @@ from app.utils.text_utils import require_text
 from app.utils.time_utils import now_str
 
 
-def _save_analysis_record(db: Session, text: str, result: dict[str, float | str]) -> None:
+def _save_analysis_record(
+    db: Session,
+    text: str,
+    result: dict[str, float | str],
+    batch_task_id: int,
+) -> None:
     db.add(
         AnalysisRecord(
             input_text=text,
@@ -22,6 +27,8 @@ def _save_analysis_record(db: Session, text: str, result: dict[str, float | str]
             positive_score=float(result["positive_score"]),
             negative_score=float(result["negative_score"]),
             model_name=str(result["model_name"]),
+            source_type="batch",
+            batch_task_id=batch_task_id,
         )
     )
 
@@ -56,7 +63,7 @@ def process_batch_upload(upload_file: UploadFile, db: Session) -> dict[str, obje
 
         for text in texts:
             result = predict_text(text, db)
-            _save_analysis_record(db, text, result)
+            _save_analysis_record(db, text, result, task.id)
             if result["predicted_label"] == "积极":
                 positive_count += 1
             else:
@@ -121,13 +128,35 @@ def get_batch_detail(db: Session, task_id: int) -> dict[str, object]:
         raise ValueError("批量任务不存在")
 
     preview: list[dict[str, object]] = []
-    if task.result_file_path and Path(task.result_file_path).exists():
+    records = (
+        db.query(AnalysisRecord)
+        .filter(
+            AnalysisRecord.source_type == "batch",
+            AnalysisRecord.batch_task_id == task_id,
+        )
+        .order_by(AnalysisRecord.id.asc())
+        .limit(200)
+        .all()
+    )
+    if records:
+        preview = [
+            {
+                "text": record.input_text,
+                "predicted_label": record.predicted_label,
+                "confidence": record.confidence,
+                "positive_score": record.positive_score,
+                "negative_score": record.negative_score,
+            }
+            for record in records
+        ]
+    elif task.result_file_path and Path(task.result_file_path).exists():
         df = read_csv_compatible(task.result_file_path)
-        preview = df.head(50).to_dict(orient="records")
+        preview = df.head(200).to_dict(orient="records")
 
     return {
         "task": batch_task_to_dict(task),
         "preview": preview,
+        "preview_limit": 200,
         "chart": [
             {"name": "积极", "value": task.positive_count},
             {"name": "消极", "value": task.negative_count},

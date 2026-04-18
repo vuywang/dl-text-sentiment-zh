@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-heading">
     <h1>历史记录</h1>
-    <p>按时间倒序查看单文本分析历史、批量分析历史和训练任务历史。</p>
+    <p>按时间倒序查看单文本分析历史、批量分析历史和训练任务历史。删除操作会同步删除数据库中的记录，请谨慎操作。</p>
 </div>
 
 <ul class="nav nav-tabs" id="historyTabs" role="tablist">
@@ -13,43 +13,97 @@
 </ul>
 <div class="tab-content content-panel border-top-0" id="historyTabsContent">
     <div class="tab-pane fade show active" id="analysis-pane" role="tabpanel" tabindex="0">
-        <div class="table-responsive">
+        <div class="history-toolbar">
+            <div>
+                <div class="section-title mb-1">单文本分析记录</div>
+                <div class="small text-muted">这里只展示单文本分析产生的记录，批量任务明细请在“批量分析”中查看。</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <button id="deleteSelectedAnalysisBtn" class="btn btn-outline-danger btn-sm" type="button">删除选中记录</button>
+                <button id="clearAnalysisBtn" class="btn btn-danger btn-sm" type="button">清空单文本记录</button>
+            </div>
+        </div>
+        <div id="analysisStatus" class="small mt-2"></div>
+        <div class="table-responsive mt-3">
             <table class="table table-sm align-middle">
-                <thead><tr><th>ID</th><th>文本</th><th>结果</th><th>置信度</th><th>模型</th><th>时间</th></tr></thead>
+                <thead>
+                <tr>
+                    <th class="select-column"><input class="form-check-input" type="checkbox" id="selectAllAnalysis" aria-label="全选单文本记录"></th>
+                    <th>ID</th>
+                    <th>文本</th>
+                    <th>结果</th>
+                    <th>置信度</th>
+                    <th>模型</th>
+                    <th>时间</th>
+                </tr>
+                </thead>
                 <tbody>
                 {% for record in analysis_records %}
                 <tr>
+                    <td><input class="form-check-input analysis-check" type="checkbox" value="{{ record.id }}" aria-label="选择单文本记录 {{ record.id }}"></td>
                     <td>{{ record.id }}</td>
-                    <td class="table-text">{{ record.input_text }}</td>
+                    <td class="table-text" title="{{ record.input_text }}">{{ record.input_text }}</td>
                     <td>{{ record.predicted_label }}</td>
                     <td>{{ "%.4f"|format(record.confidence) }}</td>
-                    <td class="table-text">{{ record.model_name }}</td>
+                    <td class="table-text" title="{{ record.model_name }}">{{ record.model_name }}</td>
                     <td>{{ record.created_at }}</td>
                 </tr>
                 {% else %}
-                <tr><td colspan="6" class="text-muted">暂无单文本分析记录</td></tr>
+                <tr><td colspan="7" class="text-muted">暂无单文本分析记录</td></tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
     <div class="tab-pane fade" id="batch-pane" role="tabpanel" tabindex="0">
-        <div class="table-responsive">
+        <div class="history-toolbar">
+            <div>
+                <div class="section-title mb-1">批量分析任务</div>
+                <div class="small text-muted">可以查看每个批次的分析明细，或删除选中的批量任务和对应明细。</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <button id="deleteSelectedBatchBtn" class="btn btn-outline-danger btn-sm" type="button">删除选中批量任务</button>
+                <button id="clearBatchBtn" class="btn btn-danger btn-sm" type="button">清空批量任务</button>
+            </div>
+        </div>
+        <div id="batchStatus" class="small mt-2"></div>
+        <div class="table-responsive mt-3">
             <table class="table table-sm align-middle">
-                <thead><tr><th>ID</th><th>文件名</th><th>总数</th><th>积极</th><th>消极</th><th>状态</th><th>时间</th></tr></thead>
+                <thead>
+                <tr>
+                    <th class="select-column"><input class="form-check-input" type="checkbox" id="selectAllBatch" aria-label="全选批量任务"></th>
+                    <th>ID</th>
+                    <th>文件名</th>
+                    <th>总数</th>
+                    <th>积极</th>
+                    <th>消极</th>
+                    <th>状态</th>
+                    <th>时间</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
                 <tbody>
                 {% for task in batch_tasks %}
                 <tr>
+                    <td><input class="form-check-input batch-check" type="checkbox" value="{{ task.id }}" aria-label="选择批量任务 {{ task.id }}"></td>
                     <td>{{ task.id }}</td>
-                    <td class="table-text">{{ task.original_file_name }}</td>
+                    <td class="table-text" title="{{ task.original_file_name }}">{{ task.original_file_name }}</td>
                     <td>{{ task.total_count }}</td>
                     <td>{{ task.positive_count }}</td>
                     <td>{{ task.negative_count }}</td>
-                    <td>{{ task.status }}</td>
+                    <td><span class="badge text-bg-secondary">{{ task.status }}</span></td>
                     <td>{{ task.created_at }}</td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-outline-primary btn-sm view-batch-btn" type="button" data-task-id="{{ task.id }}">查看结果</button>
+                            {% if task.result_file_path %}
+                            <a class="btn btn-outline-secondary btn-sm" href="/api/batch/{{ task.id }}/download" target="_blank">下载 CSV</a>
+                            {% endif %}
+                        </div>
+                    </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="7" class="text-muted">暂无批量分析记录</td></tr>
+                <tr><td colspan="9" class="text-muted">暂无批量分析记录</td></tr>
                 {% endfor %}
                 </tbody>
             </table>
@@ -63,7 +117,7 @@
                 {% for task in train_tasks %}
                 <tr>
                     <td>{{ task.id }}</td>
-                    <td class="table-text">{{ task.model_name }}</td>
+                    <td class="table-text" title="{{ task.model_name }}">{{ task.model_name }}</td>
                     <td>{{ task.dataset_name }}</td>
                     <td>{{ "%.4f"|format(task.accuracy) if task.accuracy is not none else "-" }}</td>
                     <td>{{ "%.4f"|format(task.precision_score) if task.precision_score is not none else "-" }}</td>
@@ -80,4 +134,180 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="batchDetailModal" tabindex="-1" aria-labelledby="batchDetailTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="batchDetailTitle">批量分析结果</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body">
+                <div id="batchDetailSummary" class="row g-3 mb-3"></div>
+                <div id="batchDetailNotice" class="alert alert-info py-2 d-none"></div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead><tr><th>序号</th><th>文本</th><th>结果</th><th>置信度</th><th>积极概率</th><th>消极概率</th></tr></thead>
+                        <tbody id="batchDetailRows"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a id="batchDetailDownload" class="btn btn-outline-primary" href="#" target="_blank">下载结果 CSV</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function checkedIds(selector) {
+    return Array.from(document.querySelectorAll(selector))
+        .filter(item => item.checked)
+        .map(item => Number(item.value))
+        .filter(value => Number.isInteger(value) && value > 0);
+}
+
+function bindSelectAll(masterId, itemSelector) {
+    const master = document.getElementById(masterId);
+    const items = Array.from(document.querySelectorAll(itemSelector));
+    if (!master) {
+        return;
+    }
+    master.addEventListener('change', () => {
+        items.forEach(item => {
+            item.checked = master.checked;
+        });
+    });
+    items.forEach(item => {
+        item.addEventListener('change', () => {
+            master.checked = items.length > 0 && items.every(option => option.checked);
+        });
+    });
+}
+
+function setInlineStatus(id, message, isError = false) {
+    const element = document.getElementById(id);
+    if (!element) {
+        return;
+    }
+    element.textContent = message;
+    element.className = `small mt-2 ${isError ? 'text-danger' : 'text-success'}`;
+}
+
+async function deleteWithConfirm(url, body, message, statusId) {
+    if (!window.confirm(message)) {
+        return;
+    }
+    const payload = await apiPost(url, body);
+    if (payload.code !== 0) {
+        setInlineStatus(statusId, payload.message, true);
+        return;
+    }
+    setInlineStatus(statusId, payload.message || '操作成功');
+    window.setTimeout(() => window.location.reload(), 500);
+}
+
+async function showBatchDetail(taskId) {
+    const response = await fetch(`/api/batch/${taskId}`);
+    const payload = await response.json();
+    if (payload.code !== 0) {
+        setInlineStatus('batchStatus', payload.message, true);
+        return;
+    }
+
+    const data = payload.data;
+    const task = data.task;
+    const rows = data.preview || [];
+    document.getElementById('batchDetailTitle').textContent = `批量分析结果：任务 ${task.id}`;
+    document.getElementById('batchDetailSummary').innerHTML = `
+        <div class="col-md-3"><div class="metric-row"><span>文件名</span><strong class="text-truncate ms-2">${escapeHtml(task.original_file_name)}</strong></div></div>
+        <div class="col-md-3"><div class="metric-row"><span>总数</span><strong>${task.total_count}</strong></div></div>
+        <div class="col-md-3"><div class="metric-row"><span>积极</span><strong>${task.positive_count}</strong></div></div>
+        <div class="col-md-3"><div class="metric-row"><span>消极</span><strong>${task.negative_count}</strong></div></div>
+    `;
+    const notice = document.getElementById('batchDetailNotice');
+    if (rows.length === 0) {
+        notice.textContent = '没有读取到该批次的明细数据，可能是导出文件已不存在。';
+        notice.classList.remove('d-none');
+    } else if (task.total_count > rows.length) {
+        notice.textContent = `当前仅展示前 ${rows.length} 条记录，完整结果请下载 CSV 查看。`;
+        notice.classList.remove('d-none');
+    } else {
+        notice.classList.add('d-none');
+    }
+
+    document.getElementById('batchDetailRows').innerHTML = rows.map((row, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td class="table-text" title="${escapeHtml(row.text)}">${escapeHtml(row.text)}</td>
+            <td>${escapeHtml(row.predicted_label)}</td>
+            <td>${formatPercent(row.confidence)}</td>
+            <td>${formatPercent(row.positive_score)}</td>
+            <td>${formatPercent(row.negative_score)}</td>
+        </tr>
+    `).join('') || '<tr><td colspan="6" class="text-muted">暂无明细数据</td></tr>';
+
+    const download = document.getElementById('batchDetailDownload');
+    download.href = `/api/batch/${task.id}/download`;
+    download.classList.toggle('disabled', !task.result_file_path);
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('batchDetailModal')).show();
+}
+
+bindSelectAll('selectAllAnalysis', '.analysis-check');
+bindSelectAll('selectAllBatch', '.batch-check');
+
+document.getElementById('deleteSelectedAnalysisBtn').addEventListener('click', async () => {
+    const ids = checkedIds('.analysis-check');
+    if (ids.length === 0) {
+        setInlineStatus('analysisStatus', '请先选择要删除的单文本记录。', true);
+        return;
+    }
+    await deleteWithConfirm(
+        '/api/history/analysis/delete',
+        {ids},
+        `确定要删除选中的 ${ids.length} 条单文本记录吗？该操作会删除数据库中的数据，无法恢复。`,
+        'analysisStatus'
+    );
+});
+
+document.getElementById('clearAnalysisBtn').addEventListener('click', async () => {
+    await deleteWithConfirm(
+        '/api/history/analysis/clear',
+        {},
+        '确定要清空全部单文本分析记录吗？该操作会删除数据库中的数据，无法恢复。',
+        'analysisStatus'
+    );
+});
+
+document.getElementById('deleteSelectedBatchBtn').addEventListener('click', async () => {
+    const ids = checkedIds('.batch-check');
+    if (ids.length === 0) {
+        setInlineStatus('batchStatus', '请先选择要删除的批量任务。', true);
+        return;
+    }
+    await deleteWithConfirm(
+        '/api/history/batch/delete',
+        {ids},
+        `确定要删除选中的 ${ids.length} 个批量任务吗？对应的批量分析明细也会从数据库中删除，无法恢复。`,
+        'batchStatus'
+    );
+});
+
+document.getElementById('clearBatchBtn').addEventListener('click', async () => {
+    await deleteWithConfirm(
+        '/api/history/batch/clear',
+        {},
+        '确定要清空全部批量任务吗？对应的批量分析明细也会从数据库中删除，无法恢复。',
+        'batchStatus'
+    );
+});
+
+document.querySelectorAll('.view-batch-btn').forEach(button => {
+    button.addEventListener('click', async () => {
+        await showBatchDetail(Number(button.dataset.taskId));
+    });
+});
+</script>
 {% endblock %}

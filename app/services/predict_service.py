@@ -15,6 +15,8 @@ def predict_and_save(text: str, db: Session) -> dict[str, float | str | int]:
         positive_score=float(result["positive_score"]),
         negative_score=float(result["negative_score"]),
         model_name=str(result["model_name"]),
+        source_type="single",
+        batch_task_id=None,
     )
     db.add(record)
     db.commit()
@@ -31,5 +33,7 @@ def record_to_dict(record: AnalysisRecord) -> dict[str, object]:
         "positive_score": record.positive_score,
         "negative_score": record.negative_score,
         "model_name": record.model_name,
+        "source_type": record.source_type,
+        "batch_task_id": record.batch_task_id,
         "created_at": record.created_at.strftime("%Y-%m-%d %H:%M:%S"),
     }

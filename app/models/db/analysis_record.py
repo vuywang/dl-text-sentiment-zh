@@ -16,4 +16,6 @@ class AnalysisRecord(Base):
     positive_score: Mapped[float] = mapped_column(Float, nullable=False)
     negative_score: Mapped[float] = mapped_column(Float, nullable=False)
     model_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    source_type: Mapped[str] = mapped_column(String(20), default="single", nullable=False, index=True)
+    batch_task_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)

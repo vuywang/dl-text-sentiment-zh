@@ -99,6 +99,17 @@ body {
     border-bottom: 0;
 }
 
+.history-toolbar {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.select-column {
+    width: 44px;
+}
+
 .code-chip {
     background: #eef2ff;
     border-radius: 6px;
@@ -127,6 +138,14 @@ body {
 }
 
 @media (max-width: 768px) {
+    .history-toolbar {
+        display: block;
+    }
+
+    .history-toolbar .btn {
+        margin-top: 0.75rem;
+    }
+
     .table-text {
         max-width: 220px;
     }

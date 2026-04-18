@@ -3,3 +3,6 @@
 
 
 /storage/models/current/bert-base-chinese-base/
+.idea
+/storage/uploads/
+/storage/exports/
