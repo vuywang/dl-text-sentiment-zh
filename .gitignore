@@ -6,3 +6,9 @@
 .idea
 /storage/uploads/
 /storage/exports/
+storage/logs/codex_*.log
+storage/logs/codex_*.err.log
+frontend/node_modules/
+frontend/dist/
+__pycache__/
+*.pyc

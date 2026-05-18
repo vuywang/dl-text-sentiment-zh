@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.schema.train_schema import TrainStartRequest
 from app.services.history_service import train_task_to_dict
-from app.services.train_service import get_train_task, start_training_task
+from app.services.train_service import get_train_log_path, get_train_task, start_training_task
 from app.utils.response import fail, success
 
 router = APIRouter(prefix="/api/train", tags=["train"])
@@ -28,3 +28,24 @@ def train_detail_api(task_id: int, db: Session = Depends(get_db)) -> dict[str, o
     if task is None:
         return fail("训练任务不存在", code=3002)
     return success(train_task_to_dict(task))
+
+
+@router.get("/{task_id}/log")
+def train_log_api(task_id: int, db: Session = Depends(get_db)) -> dict[str, object]:
+    task = get_train_task(db, task_id)
+    if task is None:
+        return fail("训练任务不存在", code=3003)
+    log_path = get_train_log_path(task_id)
+    content = ""
+    if log_path.exists():
+        with log_path.open("r", encoding="utf-8", errors="ignore") as file:
+            lines = file.readlines()
+        content = "".join(lines[-300:])
+    return success(
+        {
+            "task_id": task_id,
+            "log_path": str(log_path),
+            "exists": log_path.exists(),
+            "content": content,
+        }
+    )

@@ -9,7 +9,17 @@ from fastapi.templating import Jinja2Templates
 from app.core.config import ensure_directories, settings
 from app.core.database import SessionLocal, init_db
 from app.core.logger import get_logger
-from app.routers import batch_router, history_router, page_router, predict_router, train_router
+from app.routers import (
+    batch_router,
+    dashboard_router,
+    evaluate_router,
+    history_router,
+    insight_router,
+    model_router,
+    page_router,
+    predict_router,
+    train_router,
+)
 from app.services.model_service import ensure_default_model, load_active_model_safely
 from app.utils.response import fail
 
@@ -39,6 +49,10 @@ app.include_router(predict_router.router)
 app.include_router(batch_router.router)
 app.include_router(train_router.router)
 app.include_router(history_router.router)
+app.include_router(dashboard_router.router)
+app.include_router(evaluate_router.router)
+app.include_router(model_router.router)
+app.include_router(insight_router.router)
 
 
 def _is_api_request(request: Request) -> bool:

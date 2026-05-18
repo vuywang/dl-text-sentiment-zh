@@ -1,4 +1,6 @@
+from collections import Counter
 from pathlib import Path
+import re
 
 import pandas as pd
 from fastapi import UploadFile
@@ -31,6 +33,101 @@ def _save_analysis_record(
             batch_task_id=batch_task_id,
         )
     )
+
+
+def _build_batch_report(rows: list[dict[str, object]]) -> dict[str, object]:
+    total_count = len(rows)
+    positive_count = sum(1 for row in rows if row["predicted_label"] == "积极")
+    negative_count = total_count - positive_count
+    average_confidence = sum(float(row["confidence"]) for row in rows) / total_count if total_count else 0.0
+    low_confidence_count = sum(1 for row in rows if float(row["confidence"]) < 0.6)
+    return {
+        "total_count": total_count,
+        "positive_count": positive_count,
+        "negative_count": negative_count,
+        "positive_ratio": round(positive_count / total_count, 4) if total_count else 0.0,
+        "negative_ratio": round(negative_count / total_count, 4) if total_count else 0.0,
+        "average_confidence": round(average_confidence, 4),
+        "low_confidence_count": low_confidence_count,
+    }
+
+
+def _build_confidence_distribution(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    buckets = [
+        ("0.00-0.40", 0.0, 0.4),
+        ("0.40-0.60", 0.4, 0.6),
+        ("0.60-0.80", 0.6, 0.8),
+        ("0.80-0.90", 0.8, 0.9),
+        ("0.90-1.00", 0.9, 1.01),
+    ]
+    items: list[dict[str, object]] = []
+    for label, lower, upper in buckets:
+        count = 0
+        for row in rows:
+            confidence = float(row["confidence"])
+            if lower <= confidence < upper:
+                count += 1
+        items.append({"range": label, "count": count})
+    return items
+
+
+def _build_length_distribution(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    buckets = [
+        ("1-10字", 1, 10),
+        ("11-20字", 11, 20),
+        ("21-40字", 21, 40),
+        ("41字以上", 41, 10**9),
+    ]
+    items: list[dict[str, object]] = []
+    for label, lower, upper in buckets:
+        count = 0
+        for row in rows:
+            text_length = len(str(row["text"]).strip())
+            if lower <= text_length <= upper:
+                count += 1
+        items.append({"range": label, "count": count})
+    return items
+
+
+def _extract_keywords(rows: list[dict[str, object]], top_n: int = 10) -> list[dict[str, object]]:
+    counter: Counter[str] = Counter()
+    for row in rows:
+        normalized = re.sub(r"[^\u4e00-\u9fffA-Za-z0-9]+", " ", str(row["text"]))
+        for token in normalized.split():
+            if len(token) < 2:
+                continue
+            if re.fullmatch(r"[\u4e00-\u9fff]{5,}", token):
+                for index in range(len(token) - 1):
+                    counter[token[index : index + 2]] += 1
+            else:
+                counter[token] += 1
+    return [{"word": word, "count": count} for word, count in counter.most_common(top_n)]
+
+
+def _build_batch_response(task: BatchTask, rows: list[dict[str, object]]) -> dict[str, object]:
+    report = _build_batch_report(rows)
+    low_confidence_preview = [row for row in rows if float(row["confidence"]) < 0.6][:20]
+    high_confidence_negative_preview = [
+        row
+        for row in rows
+        if row["predicted_label"] == "消极" and float(row["confidence"]) >= 0.8
+    ][:20]
+
+    return {
+        "task": batch_task_to_dict(task),
+        "preview": rows[:200],
+        "preview_limit": 200,
+        "chart": [
+            {"name": "积极", "value": int(report["positive_count"])},
+            {"name": "消极", "value": int(report["negative_count"])},
+        ],
+        "report": report,
+        "confidence_distribution": _build_confidence_distribution(rows),
+        "length_distribution": _build_length_distribution(rows),
+        "top_words": _extract_keywords(rows),
+        "low_confidence_preview": low_confidence_preview,
+        "high_confidence_negative_preview": high_confidence_negative_preview,
+    }
 
 
 def process_batch_upload(upload_file: UploadFile, db: Session) -> dict[str, object]:
@@ -90,14 +187,7 @@ def process_batch_upload(upload_file: UploadFile, db: Session) -> dict[str, obje
         db.commit()
         db.refresh(task)
 
-        return {
-            "task": batch_task_to_dict(task),
-            "preview": rows[:50],
-            "chart": [
-                {"name": "积极", "value": positive_count},
-                {"name": "消极", "value": negative_count},
-            ],
-        }
+        return _build_batch_response(task, rows)
     except Exception:
         task.status = "failed"
         db.commit()
@@ -127,7 +217,6 @@ def get_batch_detail(db: Session, task_id: int) -> dict[str, object]:
     if task is None:
         raise ValueError("批量任务不存在")
 
-    preview: list[dict[str, object]] = []
     records = (
         db.query(AnalysisRecord)
         .filter(
@@ -135,11 +224,10 @@ def get_batch_detail(db: Session, task_id: int) -> dict[str, object]:
             AnalysisRecord.batch_task_id == task_id,
         )
         .order_by(AnalysisRecord.id.asc())
-        .limit(200)
         .all()
     )
     if records:
-        preview = [
+        rows = [
             {
                 "text": record.input_text,
                 "predicted_label": record.predicted_label,
@@ -151,14 +239,8 @@ def get_batch_detail(db: Session, task_id: int) -> dict[str, object]:
         ]
     elif task.result_file_path and Path(task.result_file_path).exists():
         df = read_csv_compatible(task.result_file_path)
-        preview = df.head(200).to_dict(orient="records")
+        rows = df.to_dict(orient="records")
+    else:
+        rows = []
 
-    return {
-        "task": batch_task_to_dict(task),
-        "preview": preview,
-        "preview_limit": 200,
-        "chart": [
-            {"name": "积极", "value": task.positive_count},
-            {"name": "消极", "value": task.negative_count},
-        ],
-    }
+    return _build_batch_response(task, rows)

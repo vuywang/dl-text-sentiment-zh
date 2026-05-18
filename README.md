@@ -1,8 +1,11 @@
 # 基于深度学习的中文文本情感分析系统
 
-这是一个可以直接运行和答辩演示的中文文本情感分析系统。系统支持单文本分析、CSV 批量分析、模型训练、模型评估、历史记录查看和 SQLite 数据持久化。
+这是一个可以直接运行和答辩演示的中文文本情感分析系统。当前项目已经升级为“FastAPI + Vue3”的前后端协作方案，支持单文本分析、CSV 批量分析、模型训练、模型评估、误判样本分析、低置信度复核、模型管理、历史记录查看和 SQLite 数据持久化。
 
-系统启动后在浏览器中使用，不需要打开 notebook，不需要启动前端工程，不需要安装 Node.js。
+当前仓库同时保留两套页面：
+
+- Vue3 新版前端：适合毕业设计答辩展示，页面更美观，图表更完整。
+- Jinja2 旧版页面：继续保留，作为后端原功能和兼容演示入口。
 
 ## 1. 快速启动
 
@@ -31,7 +34,7 @@ conda env create -f environment.yml
 conda activate zh_sentiment_fastapi
 ```
 
-启动项目：
+### 1.1 启动后端 FastAPI
 
 ```powershell
 python run.py
@@ -44,231 +47,123 @@ Uvicorn running on http://127.0.0.1:8000
 Application startup complete.
 ```
 
-浏览器打开：
+后端地址：
 
 ```text
 http://127.0.0.1:8000
 ```
 
-以后再次启动项目，只需要执行：
-
-```powershell
-cd D:\CodeProjects\dl-text-sentiment-zh
-conda activate zh_sentiment_fastapi
-python run.py
-```
-
-项目也可以直接用 uvicorn 启动：
+也可以直接使用 uvicorn：
 
 ```powershell
 uvicorn app.main:app --reload
 ```
 
-## 2. 页面怎么用
+### 1.2 启动前端 Vue3
 
-### 首页
+新开一个 PowerShell 窗口，执行：
 
-访问：
-
-```text
-http://127.0.0.1:8000/
+```powershell
+cd D:\CodeProjects\dl-text-sentiment-zh\frontend
+npm install
+npm run dev
 ```
 
-首页用于总览系统状态，可以看到：
-
-- 当前激活模型
-- 数据库连接状态
-- 已分析文本总数
-- 积极和消极文本数量
-- 最近训练记录
-- 最近分析记录
-- 情感类别统计图
-
-答辩演示时先打开首页，让老师看到这是一个完整系统，不是单独脚本。
-
-### 单文本分析
-
-访问：
+前端默认访问地址：
 
 ```text
-http://127.0.0.1:8000/predict
+http://127.0.0.1:5173
 ```
 
-使用方法：
+Vite 已配置代理：
 
-1. 在文本框输入一段中文文本。
-2. 点击“开始分析”。
-3. 页面显示预测结果。
+- `/api` 代理到 FastAPI
+- `/storage` 代理到 FastAPI
 
-返回内容包括：
+因此前端页面可以直接调用后端接口和读取混淆矩阵、损失曲线等图片文件。
 
-- 情感标签：积极或消极
-- 置信度
-- 积极概率
-- 消极概率
-- 使用的模型名称
+### 1.3 日常启动方式
 
-页面下方会显示最近 10 条分析记录。
+以后再次启动项目，建议开两个终端：
 
-可以测试这些文本：
+```powershell
+# 终端 1：后端
+cd D:\CodeProjects\dl-text-sentiment-zh
+conda activate zh_sentiment_fastapi
+python run.py
+```
+
+```powershell
+# 终端 2：前端
+cd D:\CodeProjects\dl-text-sentiment-zh\frontend
+npm run dev
+```
+
+## 2. 新版页面怎么用
+
+Vue3 新版页面默认访问：
 
 ```text
-这家酒店服务很好，房间干净整洁。
-物流太慢了，包装也有破损。
-这部电影剧情紧凑，演员表现很自然。
-客服态度不好，问题一直没有解决。
-商品质量不错，价格也合适。
+http://127.0.0.1:5173
 ```
 
-### 批量分析
+主要页面与访问路径如下：
 
-访问：
+| 页面 | Vue 路径 | 展示重点 |
+|---|---|---|
+| 首页看板 | `/dashboard` | 统计卡片、情感占比饼图、最近趋势、模型指标雷达图、最近记录 |
+| 单文本分析 | `/predict` | 文本输入、情感标签、积极/消极概率、置信度仪表盘、分析说明 |
+| 批量分析 | `/batch` | CSV 上传、分析报告、置信度分布、文本长度分布、高频词、结果下载 |
+| 模型训练 | `/train` | 训练参数表单、任务状态、训练记录、日志入口 |
+| 模型评估 | `/evaluate` | Accuracy、Precision、Recall、F1、混淆矩阵、损失曲线、模型对比 |
+| 误判分析 | `/error-analysis` | 误判样本、真实标签/预测标签、可能原因 |
+| 复核管理 | `/review` | 低置信度文本、建议复核状态、前端筛选 |
+| 模型管理 | `/models` | 模型列表、当前启用状态、启用操作、指标查看 |
+| 历史记录 | `/history` | 单文本历史、批量任务历史、训练任务历史 |
 
-```text
-http://127.0.0.1:8000/batch
-```
-
-使用方法：
-
-1. 准备一个 CSV 文件。
-2. CSV 文件必须包含一列 `text`。
-3. 点击上传并分析。
-4. 页面显示本次任务统计、积极/消极占比图和结果预览。
-5. 点击“下载结果 CSV”导出分析结果。
-
-示例 CSV 已经放在：
+批量分析演示推荐使用：
 
 ```text
 storage/datasets/sample_batch.csv
 ```
 
-CSV 格式示例：
+CSV 要求：
 
-```csv
-text
-这家酒店服务很好，房间干净整洁。
-物流太慢了，包装也有破损。
-商品质量不错，价格也合适。
-```
+- 必须包含 `text` 列
+- 编码为 `utf-8` 或 `utf-8-sig`
 
-导出的结果文件会保存到：
+批量分析导出文件保存到：
 
 ```text
 storage/exports/
 ```
 
-导出 CSV 包含：
+### 保留的旧版页面
 
-- text
-- predicted_label
-- confidence
-- positive_score
-- negative_score
-
-命令行脚本批量分析：
-
-```powershell
-python scripts/batch_predict.py --input storage/datasets/sample_batch.csv
-```
-
-指定输出文件：
-
-```powershell
-python scripts/batch_predict.py --input storage/datasets/sample_batch.csv --output storage/exports/my_batch_result.csv
-```
-
-只导出 CSV，不写入单文本分析历史：
-
-```powershell
-python scripts/batch_predict.py --input storage/datasets/sample_batch.csv --no-history
-```
-
-脚本运行完成后会输出任务 ID、输入文件、输出文件、文本总数、积极数量和消极数量。脚本会把批量任务写入 `batch_task` 表，默认也会把每一条预测结果写入 `analysis_record` 表。
-
-### 模型训练
-
-访问：
+如果需要验证原有 Jinja2 页面仍可使用，可以继续访问：
 
 ```text
+http://127.0.0.1:8000/
+http://127.0.0.1:8000/predict
+http://127.0.0.1:8000/batch
 http://127.0.0.1:8000/train
-```
-
-页面可以设置训练参数：
-
-- epoch
-- batch_size
-- learning_rate
-- max_length
-
-点击“开始训练”后，系统会创建训练任务，任务状态写入数据库。训练完成后，系统会保存：
-
-- 模型权重
-- tokenizer
-- 训练配置
-- 评估指标
-- 混淆矩阵图片
-- 损失曲线图片
-
-模型保存目录：
-
-```text
-storage/models/archive/
-```
-
-训练日志目录：
-
-```text
-storage/logs/
-```
-
-当前项目已经提前训练过一版 30 epoch 演示模型，打开“模型评估”页面可以直接看到指标和损失曲线。
-
-### 模型评估
-
-访问：
-
-```text
 http://127.0.0.1:8000/evaluate
-```
-
-该页面展示当前已完成训练任务的评估结果，包括：
-
-- Accuracy
-- Precision
-- Recall
-- F1-score
-- 混淆矩阵图
-- 训练损失曲线
-- 测试样例预测结果
-
-如果损失曲线只有一个点，说明当前模型只训练了 1 个 epoch。训练多个 epoch 后，曲线会显示为连续折线。
-
-### 历史记录
-
-访问：
-
-```text
 http://127.0.0.1:8000/history
 ```
 
-历史记录页面可以查看：
-
-- 单文本分析历史
-- 批量分析任务历史
-- 模型训练任务历史
-
-记录按时间倒序展示，数据来自 SQLite 数据库。
-
 ## 3. 答辩演示顺序
 
-答辩时按这个顺序演示最清楚：
+推荐直接使用 Vue3 新版前端按下面顺序演示：
 
-1. 打开首页，说明系统名称、当前激活模型、数据库状态和统计图。
-2. 打开单文本分析页，输入一条积极文本和一条消极文本，展示预测结果。
-3. 打开批量分析页，上传 `storage/datasets/sample_batch.csv`，展示统计图和结果导出。
-4. 打开模型训练页，说明训练参数和训练记录。
-5. 打开模型评估页，展示 Accuracy、Precision、Recall、F1-score、混淆矩阵和损失曲线。
-6. 打开历史记录页，展示分析记录、批量任务记录和训练任务记录。
+1. 打开 `/dashboard`，先介绍系统整体概况、当前启用模型、累计分析数量和图表看板。
+2. 打开 `/predict`，输入一条积极文本和一条消极文本，展示情感标签、概率条、置信度仪表盘和分析说明。
+3. 打开 `/batch`，上传 `storage/datasets/sample_batch.csv`，展示批量分析报告、饼图、柱状图和结果下载。
+4. 打开 `/evaluate`，展示 Accuracy、Precision、Recall、F1-score、混淆矩阵和损失曲线。
+5. 打开 `/error-analysis`，说明中文情感分析中情感转折、否定表达和低置信度样本带来的误判问题。
+6. 打开 `/review`，展示低置信度文本需要人工复核的业务意义。
+7. 打开 `/models`，说明系统支持模型注册、启用和指标对比。
+8. 打开 `/history`，展示 SQLite 持久化记录，包括单文本、批量任务和训练任务。
+9. 如果老师想看训练入口，再打开 `/train` 介绍训练参数和日志入口，不建议现场跑长时间训练。
 
 ## 4. 常见问题
 
@@ -331,7 +226,8 @@ max_length = 64
 | Python | 3.14.3 |
 | 后端 | FastAPI 0.135.3，Uvicorn 0.44.0 |
 | 模板 | Jinja2 3.1.6 |
-| 前端 | Bootstrap 5.3.8，Apache ECharts 6.0.0，原生 JavaScript |
+| 前端（新版） | Vue 3，Vite，Element Plus，Vue Router，Pinia，Axios，ECharts |
+| 前端（旧版保留） | Jinja2 模板，Bootstrap 5.3.8，原生 JavaScript |
 | 数据库 | SQLite，SQLAlchemy 2.0.49 |
 | 文件上传 | python-multipart 0.0.26 |
 | 深度学习 | PyTorch 2.11.0，Transformers 5.5.4 |
@@ -409,6 +305,7 @@ project_root/
 │  ├─ services/          预测、批量、训练、历史记录服务
 │  ├─ utils/             文件、文本、时间、图表工具
 │  └─ templates/         Jinja2 页面模板
+├─ frontend/             Vue3 前端工程（Vite + Element Plus + ECharts）
 ├─ static/               CSS、JavaScript、图片资源
 ├─ scripts/              训练、评估、数据库初始化脚本
 ├─ storage/              数据库、上传文件、导出文件、日志、模型、数据集
@@ -419,15 +316,23 @@ project_root/
 
 ## 9. API 接口
 
-页面通过原生 JavaScript 调用 API。主要接口如下：
+新版 Vue 前端通过 Axios 调用 API。主要接口如下：
 
 ```text
+GET  /api/dashboard/summary
+GET  /api/dashboard/charts
 POST /api/predict
 POST /api/batch/upload
 GET  /api/batch/{task_id}
 GET  /api/batch/{task_id}/download
 POST /api/train/start
 GET  /api/train/{task_id}
+GET  /api/train/{task_id}/log
+GET  /api/evaluate/latest
+GET  /api/models
+POST /api/models/{id}/activate
+GET  /api/review/low-confidence
+GET  /api/error-samples
 GET  /api/history/analysis
 GET  /api/history/batch
 GET  /api/history/train

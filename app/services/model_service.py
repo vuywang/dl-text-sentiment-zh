@@ -29,6 +29,18 @@ def list_models(db: Session) -> list[ModelRegistry]:
     return db.query(ModelRegistry).order_by(ModelRegistry.created_at.desc()).all()
 
 
+def model_to_dict(model: ModelRegistry) -> dict[str, object]:
+    return {
+        "id": model.id,
+        "model_name": model.model_name,
+        "model_type": model.model_type,
+        "model_dir": model.model_dir,
+        "is_active": model.is_active,
+        "remark": model.remark,
+        "created_at": model.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+
 def _save_base_model(base_dir: Path) -> None:
     base_dir.mkdir(parents=True, exist_ok=True)
     tokenizer = AutoTokenizer.from_pretrained(settings.PRETRAINED_MODEL_NAME)
@@ -120,6 +132,36 @@ def load_active_model_safely() -> None:
         logger.exception("应用启动时模型加载失败：%s", exc)
     finally:
         db.close()
+
+
+def activate_model(db: Session, model_id: int) -> dict[str, object]:
+    target = db.get(ModelRegistry, model_id)
+    if target is None:
+        raise ValueError("模型不存在")
+
+    previous = get_active_model(db)
+    previous_id = previous.id if previous is not None else None
+    if target.is_active:
+        load_active_model(db)
+        return model_to_dict(target)
+
+    db.query(ModelRegistry).update({ModelRegistry.is_active: False})
+    target.is_active = True
+    db.commit()
+    db.refresh(target)
+
+    try:
+        load_active_model(db)
+    except Exception as exc:  # noqa: BLE001
+        db.query(ModelRegistry).update({ModelRegistry.is_active: False})
+        if previous_id is not None:
+            previous_model = db.get(ModelRegistry, previous_id)
+            if previous_model is not None:
+                previous_model.is_active = True
+        db.commit()
+        raise RuntimeError(f"模型启用失败：{exc}") from exc
+
+    return model_to_dict(target)
 
 
 def predict_text(text: str, db: Session, max_length: int = settings.DEFAULT_MAX_LENGTH) -> dict[str, float | str]:

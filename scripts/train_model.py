@@ -218,6 +218,8 @@ def train(args: argparse.Namespace, output_dir: Path) -> dict[str, object]:
         "precision_score": float(latest_metrics["precision_score"]),
         "recall_score": float(latest_metrics["recall_score"]),
         "f1_score": float(latest_metrics["f1_score"]),
+        "train_losses": [float(item) for item in train_losses],
+        "val_losses": [float(item) for item in val_losses],
         "confusion_matrix": latest_metrics["confusion_matrix"].tolist(),
         "confusion_matrix_path": str(confusion_matrix_path),
         "loss_curve_path": str(loss_curve_path),
