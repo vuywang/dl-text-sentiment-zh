@@ -14,10 +14,10 @@ const props = defineProps({
 
 const config = computed(() => {
   if (props.label === '积极') {
-    return { type: 'success', text: '积极情感' }
+    return { type: 'success', text: '积极' }
   }
   if (props.label === '消极') {
-    return { type: 'danger', text: '消极情感' }
+    return { type: 'danger', text: '消极' }
   }
   return { type: 'info', text: props.label || '待分析' }
 })

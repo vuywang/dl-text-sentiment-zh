@@ -2,13 +2,13 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
 const service = axios.create({
-  baseURL: '/',
-  timeout: 60000,
+  baseURL: '/api',
+  timeout: 30000,
 })
 
 service.interceptors.response.use(
   (response) => {
-    if (response.config.responseType === 'blob' || response.config.rawResponse) {
+    if (response.config?.responseType === 'blob' || response.config?.rawResponse) {
       return response
     }
 
@@ -18,7 +18,7 @@ service.interceptors.response.use(
         return payload.data
       }
       const message = payload.message || '请求失败'
-      if (!response.config.silentError) {
+      if (!response.config?.silentError) {
         ElMessage.error(message)
       }
       return Promise.reject(new Error(message))
@@ -28,7 +28,9 @@ service.interceptors.response.use(
   },
   (error) => {
     const message = error.response?.data?.message || error.message || '网络请求失败'
-    ElMessage.error(message)
+    if (!error.config?.silentError) {
+      ElMessage.error(message)
+    }
     return Promise.reject(error)
   }
 )

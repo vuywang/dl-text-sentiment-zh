@@ -243,7 +243,7 @@ onMounted(loadRecentTasks)
             <p>点击“查看报告”可直接切换到历史任务详情。</p>
           </div>
         </div>
-        <el-table :data="recentTasks" stripe max-height="360">
+        <el-table :data="recentTasks" stripe max-height="360" empty-text="暂无批量任务记录">
           <el-table-column prop="original_file_name" label="文件名" min-width="220" />
           <el-table-column prop="total_count" label="总量" width="90" />
           <el-table-column prop="status" label="状态" width="100">
@@ -317,7 +317,7 @@ onMounted(loadRecentTasks)
             <p>默认展示前 {{ batchData.preview_limit || 200 }} 条记录，含情感标签与概率字段。</p>
           </div>
         </div>
-        <el-table :data="batchData.preview" stripe max-height="420">
+        <el-table :data="batchData.preview" stripe max-height="420" empty-text="当前任务没有可预览的数据">
           <el-table-column label="文本内容" min-width="360">
             <template #default="{ row }">
               <el-tooltip :content="row.text" placement="top-start">
@@ -350,7 +350,7 @@ onMounted(loadRecentTasks)
               <p>建议在答辩时说明这类文本更适合结合人工复核。</p>
             </div>
           </div>
-          <el-table :data="batchData.low_confidence_preview" stripe max-height="320">
+          <el-table :data="batchData.low_confidence_preview" stripe max-height="320" empty-text="当前任务没有低置信度文本">
             <el-table-column label="文本内容" min-width="260">
               <template #default="{ row }">
                 <el-tooltip :content="row.text" placement="top-start">
@@ -376,7 +376,7 @@ onMounted(loadRecentTasks)
               <p>常用于展示系统对明显负面评价的识别能力。</p>
             </div>
           </div>
-          <el-table :data="batchData.high_confidence_negative_preview" stripe max-height="320">
+          <el-table :data="batchData.high_confidence_negative_preview" stripe max-height="320" empty-text="当前任务没有高置信度消极文本">
             <el-table-column label="文本内容" min-width="260">
               <template #default="{ row }">
                 <el-tooltip :content="row.text" placement="top-start">
@@ -393,6 +393,10 @@ onMounted(loadRecentTasks)
           </el-table>
         </div>
       </div>
+    </div>
+
+    <div v-else class="card-panel empty-report">
+      <el-empty description="上传 CSV 后，这里会展示批量分析报告、图表和结果预览。" />
     </div>
   </div>
 </template>
@@ -434,5 +438,9 @@ onMounted(loadRecentTasks)
   gap: 12px;
   flex-wrap: wrap;
   margin-top: 22px;
+}
+
+.empty-report {
+  padding: 28px;
 }
 </style>

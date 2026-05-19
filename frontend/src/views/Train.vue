@@ -179,7 +179,7 @@ onBeforeUnmount(() => {
           <p>重点保留训练任务状态、主要超参数、Accuracy 和日志查看入口。</p>
         </div>
       </div>
-      <el-table :data="historyList" stripe>
+      <el-table :data="historyList" stripe empty-text="暂无训练任务记录">
         <el-table-column prop="model_name" label="模型名称" min-width="240" />
         <el-table-column prop="epoch_count" label="epoch" width="90" />
         <el-table-column prop="batch_size" label="batch_size" width="110" />

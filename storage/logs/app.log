@@ -517,3 +517,10 @@ TypeError: cannot use 'tuple' as a dict key (unhashable type: 'dict')
 2026-05-18 22:28:29 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928
 2026-05-18 23:10:41 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928
 2026-05-18 23:12:56 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928
+2026-05-19 06:55:27 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928
+2026-05-19 22:08:15 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928
+2026-05-19 22:08:42 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928
+2026-05-19 22:09:06 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928
+2026-05-19 22:09:40 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928
+2026-05-19 22:20:02 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928
+2026-05-19 22:22:27 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928

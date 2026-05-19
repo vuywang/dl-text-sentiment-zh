@@ -27,7 +27,13 @@ export const useAppStore = defineStore('app', {
     applySummary(summary) {
       this.projectName = summary.project_name || this.projectName
       this.activeModel = summary.active_model || null
-      this.overview = summary.overview || this.overview
+      this.overview = summary.overview || {
+        total_count: summary.total_count || 0,
+        positive_count: summary.positive_count || 0,
+        negative_count: summary.negative_count || 0,
+        average_confidence: summary.average_confidence || 0,
+        low_confidence_count: summary.low_confidence_count || 0,
+      }
       this.lastUpdatedAt = new Date().toLocaleTimeString('zh-CN', { hour12: false })
     },
     async fetchSummary() {

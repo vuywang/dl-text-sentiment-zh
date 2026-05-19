@@ -3,7 +3,7 @@ import request from './request'
 export function uploadBatchFile(file) {
   const formData = new FormData()
   formData.append('file', file)
-  return request.post('/api/batch/upload', formData, {
+  return request.post('/batch/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -11,7 +11,7 @@ export function uploadBatchFile(file) {
 }
 
 export function getBatchDetail(taskId) {
-  return request.get(`/api/batch/${taskId}`)
+  return request.get(`/batch/${taskId}`)
 }
 
 export function getBatchDownloadUrl(taskId) {

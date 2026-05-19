@@ -7,13 +7,14 @@ body,
 #app {
   margin: 0;
   min-height: 100%;
+  width: 100%;
   font-family: var(--body-font);
   color: var(--text-primary);
   background: var(--app-bg);
 }
 
 body {
-  min-width: 1280px;
+  min-width: 0;
 }
 
 a {
@@ -60,6 +61,7 @@ a {
 
 .table-card {
   padding: 20px;
+  overflow: hidden;
 }
 
 .table-card__header {
@@ -105,5 +107,16 @@ a {
   .two-col-grid,
   .three-col-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .stat-grid,
+  .three-col-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-grid {
+    gap: 18px;
   }
 }

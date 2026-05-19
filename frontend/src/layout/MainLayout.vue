@@ -26,8 +26,8 @@ const menuItems = [
   { path: '/batch', label: '批量分析', icon: Document },
   { path: '/train', label: '模型训练', icon: Cpu },
   { path: '/evaluate', label: '模型评估', icon: Histogram },
+  { path: '/review', label: '低置信度复核', icon: Connection },
   { path: '/error-analysis', label: '误判分析', icon: WarningFilled },
-  { path: '/review', label: '复核管理', icon: Connection },
   { path: '/models', label: '模型管理', icon: Setting },
   { path: '/history', label: '历史记录', icon: List },
 ]
@@ -137,6 +137,7 @@ onBeforeUnmount(() => {
 
 .sidebar {
   width: 268px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   padding: 18px 14px;
@@ -305,6 +306,7 @@ onBeforeUnmount(() => {
 @media (max-width: 1200px) {
   .shell {
     grid-template-columns: 1fr;
+    padding: 16px;
   }
 
   .sidebar {

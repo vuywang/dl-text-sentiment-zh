@@ -8,7 +8,7 @@ import {
   WarningFilled,
 } from '@element-plus/icons-vue'
 import { computed, onMounted, ref } from 'vue'
-import { getDashboardCharts, getDashboardSummary } from '../api/dashboard'
+import { getDashboardSummary } from '../api/dashboard'
 import ChartCard from '../components/ChartCard.vue'
 import PageHeader from '../components/PageHeader.vue'
 import SentimentBadge from '../components/SentimentBadge.vue'
@@ -32,22 +32,17 @@ const summary = ref({
   recent_train_tasks: [],
   recent_batch_tasks: [],
   recent_analysis_records: [],
-})
-const charts = ref({
-  sentiment_ratio: [],
-  analysis_trend: [],
-  model_metrics: null,
+  recent_records: [],
+  sentiment_chart: [],
+  trend_chart: [],
+  model_metric_chart: null,
 })
 
 async function loadData() {
   loading.value = true
   try {
-    const [summaryData, chartData] = await Promise.all([
-      getDashboardSummary(),
-      getDashboardCharts(),
-    ])
+    const summaryData = await getDashboardSummary()
     summary.value = summaryData
-    charts.value = chartData
     appStore.applySummary(summaryData)
   } finally {
     loading.value = false
@@ -78,7 +73,7 @@ const pieOption = computed(() => ({
         borderWidth: 4,
       },
       color: ['#22c55e', '#ef4444'],
-      data: charts.value.sentiment_ratio,
+      data: summary.value.sentiment_chart || [],
     },
   ],
 }))
@@ -99,7 +94,7 @@ const trendOption = computed(() => ({
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: charts.value.analysis_trend.map((item) => item.date),
+    data: (summary.value.trend_chart || []).map((item) => item.date),
     axisLine: { lineStyle: { color: '#cbd5e1' } },
     axisLabel: { color: '#64748b' },
   },
@@ -116,7 +111,7 @@ const trendOption = computed(() => ({
       lineStyle: { width: 3, color: '#2f6bff' },
       itemStyle: { color: '#2f6bff' },
       areaStyle: { color: 'rgba(47,107,255,0.14)' },
-      data: charts.value.analysis_trend.map((item) => item.total),
+      data: (summary.value.trend_chart || []).map((item) => item.total),
     },
     {
       name: '积极',
@@ -124,7 +119,7 @@ const trendOption = computed(() => ({
       smooth: true,
       lineStyle: { width: 2, color: '#16a34a' },
       itemStyle: { color: '#16a34a' },
-      data: charts.value.analysis_trend.map((item) => item.positive),
+      data: (summary.value.trend_chart || []).map((item) => item.positive),
     },
     {
       name: '消极',
@@ -132,13 +127,13 @@ const trendOption = computed(() => ({
       smooth: true,
       lineStyle: { width: 2, color: '#ef4444' },
       itemStyle: { color: '#ef4444' },
-      data: charts.value.analysis_trend.map((item) => item.negative),
+      data: (summary.value.trend_chart || []).map((item) => item.negative),
     },
   ],
 }))
 
 const metricOption = computed(() => {
-  const metrics = charts.value.model_metrics
+  const metrics = summary.value.model_metric_chart
   return {
     tooltip: {},
     radar: {
@@ -217,7 +212,7 @@ onMounted(loadData)
       />
       <StatCard
         title="平均置信度"
-        :value="formatPercent(summary.overview.average_confidence)"
+        :value="formatPercent(summary.average_confidence)"
         subtitle="用于衡量整体预测稳定度"
         :icon="DataLine"
         accent="#6366f1"
@@ -282,11 +277,11 @@ onMounted(loadData)
             <span>条低置信度文本建议人工复核</span>
           </div>
           <div class="overview-tip">
-            <strong>{{ charts.model_metrics?.model_name || '暂无训练结果' }}</strong>
+            <strong>{{ summary.model_metric_chart?.model_name || '暂无训练结果' }}</strong>
             <span>用于右侧模型性能雷达图展示</span>
           </div>
           <div class="overview-tip">
-            <strong>{{ summary.recent_analysis_records.length }}</strong>
+            <strong>{{ (summary.recent_records || summary.recent_analysis_records || []).length }}</strong>
             <span>条近期记录可作为实时演示数据入口</span>
           </div>
         </div>
@@ -299,14 +294,14 @@ onMounted(loadData)
         description="基于系统累计分析记录统计整体情感分布。"
         :option="pieOption"
         :loading="loading"
-        :empty="!charts.sentiment_ratio.length"
+        :empty="!(summary.sentiment_chart || []).length"
       />
       <ChartCard
         title="最近分析趋势"
         description="展示近 7 天文本分析总量及积极、消极变化趋势。"
         :option="trendOption"
         :loading="loading"
-        :empty="!charts.analysis_trend.length"
+        :empty="!(summary.trend_chart || []).length"
       />
     </div>
 
@@ -316,7 +311,7 @@ onMounted(loadData)
         description="选取最新完成训练任务的 Accuracy、Precision、Recall、F1 作为答辩展示重点。"
         :option="metricOption"
         :loading="loading"
-        :empty="!charts.model_metrics"
+        :empty="!summary.model_metric_chart"
       />
 
       <div class="card-panel table-card">
@@ -326,7 +321,7 @@ onMounted(loadData)
             <p>可直接观察近期预测文本内容、标签和置信度表现。</p>
           </div>
         </div>
-        <el-table :data="summary.recent_analysis_records" stripe>
+        <el-table :data="summary.recent_records || summary.recent_analysis_records" stripe empty-text="暂无分析记录">
           <el-table-column label="文本内容" min-width="260">
             <template #default="{ row }">
               <el-tooltip :content="row.input_text" placement="top-start">
@@ -355,7 +350,7 @@ onMounted(loadData)
             <p>保留模型名称、状态、Accuracy 和创建时间，适合答辩时说明训练过程。</p>
           </div>
         </div>
-        <el-table :data="summary.recent_train_tasks" stripe>
+        <el-table :data="summary.recent_train_tasks" stripe empty-text="暂无训练任务记录">
           <el-table-column prop="model_name" label="模型名称" min-width="220" />
           <el-table-column prop="status" label="状态" width="100">
             <template #default="{ row }">
@@ -376,7 +371,7 @@ onMounted(loadData)
             <p>文件名、任务规模和情感分布能够很好体现系统的批量处理能力。</p>
           </div>
         </div>
-        <el-table :data="summary.recent_batch_tasks" stripe>
+        <el-table :data="summary.recent_batch_tasks" stripe empty-text="暂无批量任务记录">
           <el-table-column prop="original_file_name" label="文件名" min-width="220" />
           <el-table-column prop="total_count" label="总量" width="90" />
           <el-table-column label="积极 / 消极" min-width="130">

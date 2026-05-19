@@ -16,9 +16,9 @@ const result = ref(null)
 const recentRecords = ref([])
 
 const exampleTexts = [
-  '这家酒店服务很好，房间干净整洁，下次还会再来。',
-  '客服态度不好，问题一直没有解决，整体体验很差。',
-  '包装还可以，但是发货速度有点慢，整体感受一般。',
+  { label: '积极样例', text: '这家酒店服务很好，房间干净整洁，下次还会再来。' },
+  { label: '消极样例', text: '客服态度不好，问题一直没有解决，整体体验很差。' },
+  { label: '复杂样例', text: '包装还可以，但是发货速度有点慢，整体感受一般。' },
 ]
 
 function fillExample(text) {
@@ -100,10 +100,13 @@ const analysisText = computed(() => {
   if (result.value.confidence < 0.6) {
     return '该文本情感表达不够明显，建议结合人工判断进行复核。'
   }
-  if (result.value.predicted_label === '积极') {
+  if (result.value.predicted_label === '积极' && result.value.confidence >= 0.8) {
     return '文本中积极情感特征较明显，系统判断为积极情感。'
   }
-  return '文本中消极情感特征较明显，系统判断为消极情感。'
+  if (result.value.predicted_label === '消极' && result.value.confidence >= 0.8) {
+    return '文本中消极情感特征较明显，系统判断为消极情感。'
+  }
+  return '模型认为该文本具有一定情感倾向，但建议结合上下文进一步判断。'
 })
 
 onMounted(loadRecentRecords)
@@ -118,12 +121,12 @@ onMounted(loadRecentRecords)
     >
       <div class="example-actions">
         <el-button
-          v-for="text in exampleTexts"
-          :key="text"
+          v-for="item in exampleTexts"
+          :key="item.label"
           round
-          @click="fillExample(text)"
+          @click="fillExample(item.text)"
         >
-          示例文本
+          {{ item.label }}
         </el-button>
       </div>
     </PageHeader>
@@ -149,14 +152,14 @@ onMounted(loadRecentRecords)
 
         <div class="editor-panel__examples">
           <el-tag
-            v-for="text in exampleTexts"
-            :key="text"
+            v-for="item in exampleTexts"
+            :key="item.label"
             effect="plain"
             round
             class="editor-panel__example-tag"
-            @click="fillExample(text)"
+            @click="fillExample(item.text)"
           >
-            {{ truncateText(text, 18) }}
+            {{ item.label }} · {{ truncateText(item.text, 12) }}
           </el-tag>
         </div>
 
@@ -201,6 +204,12 @@ onMounted(loadRecentRecords)
           />
 
           <div class="glass-panel">
+            <ConfidenceBar
+              label="综合置信度"
+              :value="result.confidence"
+              :status="confidenceMeta.label"
+              :color="confidenceMeta.color"
+            />
             <ConfidenceBar label="积极概率" :value="result.positive_score" color="#16a34a" />
             <ConfidenceBar label="消极概率" :value="result.negative_score" color="#ef4444" />
           </div>
@@ -228,7 +237,7 @@ onMounted(loadRecentRecords)
           <p>便于演示系统的实时预测能力以及历史数据沉淀效果。</p>
         </div>
       </div>
-      <el-table :data="recentRecords" stripe>
+      <el-table :data="recentRecords" stripe empty-text="暂无历史分析记录">
         <el-table-column label="文本内容" min-width="360">
           <template #default="{ row }">
             <el-tooltip :content="row.input_text" placement="top-start">

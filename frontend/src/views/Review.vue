@@ -14,6 +14,7 @@ const reviewData = ref({
     total_count: 0,
     positive_count: 0,
     negative_count: 0,
+    average_confidence: 0,
   },
 })
 
@@ -31,7 +32,7 @@ const filteredRows = computed(() => {
     return reviewData.value.items
   }
   if (filterType.value === 'review') {
-    return reviewData.value.items.filter((item) => item.status === '建议复核')
+    return reviewData.value.items.filter((item) => item.review_status === '建议复核')
   }
   return reviewData.value.items.filter((item) => item.predicted_label === filterType.value)
 })
@@ -42,9 +43,9 @@ onMounted(loadData)
 <template>
   <div class="page-grid">
     <PageHeader
-      title="低置信度复核管理"
-      description="从历史分析记录中筛选低置信度文本，展示哪些样本更适合进入人工复核流程。"
-      tag="Review Queue"
+      title="低置信度复核页面"
+      description="筛选 confidence < 0.60 的分析记录，帮助展示系统如何识别不稳定预测并提示人工复核。"
+      tag="Low Confidence Review"
     >
       <el-radio-group v-model="filterType">
         <el-radio-button label="all">全部</el-radio-button>
@@ -54,20 +55,21 @@ onMounted(loadData)
       </el-radio-group>
     </PageHeader>
 
-    <div class="three-col-grid">
-      <StatCard title="待复核总数" :value="reviewData.summary.total_count" subtitle="当前低置信度文本总量" accent="#f97316" />
-      <StatCard title="积极文本" :value="reviewData.summary.positive_count" subtitle="低置信度中的积极预测样本" accent="#16a34a" />
-      <StatCard title="消极文本" :value="reviewData.summary.negative_count" subtitle="低置信度中的消极预测样本" accent="#ef4444" />
+    <div class="stat-grid">
+      <StatCard title="待复核总数" :value="reviewData.summary.total_count" subtitle="confidence < 0.60 的文本记录" accent="#f97316" />
+      <StatCard title="积极预测数" :value="reviewData.summary.positive_count" subtitle="低置信度中的积极样本" accent="#16a34a" />
+      <StatCard title="消极预测数" :value="reviewData.summary.negative_count" subtitle="低置信度中的消极样本" accent="#ef4444" />
+      <StatCard title="平均置信度" :value="formatPercent(reviewData.summary.average_confidence, 2)" subtitle="越低代表越值得人工复核" accent="#2f6bff" />
     </div>
 
     <div class="card-panel table-card">
       <div class="table-card__header">
         <div>
           <h3>低置信度文本列表</h3>
-          <p>用于展示系统在情感边界较模糊的样本上，会主动提示“建议人工复核”。</p>
+          <p>页面聚焦“文本内容、预测标签、正负概率、置信度、复核状态、来源类型和创建时间”等答辩重点字段。</p>
         </div>
       </div>
-      <el-table v-loading="loading" :data="filteredRows" stripe>
+      <el-table v-loading="loading" :data="filteredRows" stripe empty-text="当前没有低置信度记录">
         <el-table-column label="文本内容" min-width="360">
           <template #default="{ row }">
             <el-tooltip :content="row.input_text" placement="top-start">
@@ -89,11 +91,14 @@ onMounted(loadData)
         <el-table-column label="置信度" width="110">
           <template #default="{ row }">{{ formatPercent(row.confidence, 2) }}</template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="130">
+        <el-table-column prop="review_status" label="复核状态" width="130">
           <template #default="{ row }">
-            <el-tag type="warning" round>{{ row.status }}</el-tag>
+            <el-tag :type="row.review_status === '建议复核' ? 'warning' : row.review_status === '高可信' ? 'success' : 'info'" round>
+              {{ row.review_status }}
+            </el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="source_type" label="来源类型" width="110" />
         <el-table-column prop="created_at" label="创建时间" min-width="160" />
       </el-table>
     </div>

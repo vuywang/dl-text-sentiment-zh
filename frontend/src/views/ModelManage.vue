@@ -55,7 +55,7 @@ onMounted(loadModels)
           <p>保留“启用 / 查看指标”两个核心操作，不改动原有模型加载主逻辑。</p>
         </div>
       </div>
-      <el-table v-loading="loading" :data="models" stripe>
+      <el-table v-loading="loading" :data="models" stripe empty-text="暂无模型注册记录">
         <el-table-column prop="model_name" label="模型名称" min-width="240" />
         <el-table-column prop="model_type" label="模型类型" width="110" />
         <el-table-column prop="model_dir" label="模型路径" min-width="320" show-overflow-tooltip />

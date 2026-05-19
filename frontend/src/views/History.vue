@@ -78,7 +78,7 @@ onMounted(loadData)
     <div class="card-panel table-card">
       <el-tabs v-model="activeTab">
         <el-tab-pane label="单文本分析历史" name="analysis">
-          <el-table v-loading="loading" :data="filteredAnalysis" stripe>
+          <el-table v-loading="loading" :data="filteredAnalysis" stripe empty-text="暂无单文本分析历史">
             <el-table-column label="文本内容" min-width="360">
               <template #default="{ row }">
                 <el-tooltip :content="row.input_text" placement="top-start">
@@ -100,7 +100,7 @@ onMounted(loadData)
         </el-tab-pane>
 
         <el-tab-pane label="批量分析任务历史" name="batch">
-          <el-table v-loading="loading" :data="filteredBatch" stripe>
+          <el-table v-loading="loading" :data="filteredBatch" stripe empty-text="暂无批量分析任务历史">
             <el-table-column prop="original_file_name" label="文件名" min-width="220" />
             <el-table-column prop="status" label="状态" width="100">
               <template #default="{ row }">
@@ -123,7 +123,7 @@ onMounted(loadData)
         </el-tab-pane>
 
         <el-tab-pane label="训练任务历史" name="train">
-          <el-table v-loading="loading" :data="filteredTrain" stripe>
+          <el-table v-loading="loading" :data="filteredTrain" stripe empty-text="暂无训练任务历史">
             <el-table-column prop="model_name" label="模型名称" min-width="240" />
             <el-table-column prop="status" label="状态" width="100">
               <template #default="{ row }">

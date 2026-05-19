@@ -1,4 +1,6 @@
 <script setup>
+import { computed } from 'vue'
+
 const props = defineProps({
   label: {
     type: String,
@@ -12,13 +14,33 @@ const props = defineProps({
     type: String,
     default: '#2f6bff',
   },
+  status: {
+    type: String,
+    default: '',
+  },
+})
+
+const statusType = computed(() => {
+  if (props.status === '高可信') {
+    return 'success'
+  }
+  if (props.status === '一般可信') {
+    return 'warning'
+  }
+  if (props.status) {
+    return 'danger'
+  }
+  return 'info'
 })
 </script>
 
 <template>
   <div class="confidence-bar">
     <div class="confidence-bar__head">
-      <span>{{ label }}</span>
+      <div class="confidence-bar__label">
+        <span>{{ label }}</span>
+        <el-tag v-if="status" round effect="light" :type="statusType">{{ status }}</el-tag>
+      </div>
       <strong>{{ (value * 100).toFixed(2) }}%</strong>
     </div>
     <el-progress
@@ -41,6 +63,14 @@ const props = defineProps({
   justify-content: space-between;
   margin-bottom: 10px;
   color: var(--text-secondary);
+  gap: 12px;
+}
+
+.confidence-bar__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .confidence-bar__head strong {

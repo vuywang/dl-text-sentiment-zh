@@ -1,9 +1,9 @@
 import request from './request'
 
 export function getModels() {
-  return request.get('/api/models')
+  return request.get('/models')
 }
 
 export function activateModel(modelId) {
-  return request.post(`/api/models/${modelId}/activate`)
+  return request.post(`/models/${modelId}/activate`)
 }

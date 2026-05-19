@@ -1,6 +1,6 @@
 # 基于深度学习的中文文本情感分析系统
 
-这是一个可以直接运行和答辩演示的中文文本情感分析系统。当前项目已经升级为“FastAPI + Vue3”的前后端协作方案，支持单文本分析、CSV 批量分析、模型训练、模型评估、误判样本分析、低置信度复核、模型管理、历史记录查看和 SQLite 数据持久化。
+这是一个可以直接运行和答辩演示的中文文本情感分析系统。当前项目已经升级为“FastAPI + Vue3”的前后端协作方案，重点面向本科毕业设计答辩展示，支持 Vue3 可视化首页、单文本情感分析、CSV 批量分析报告、模型训练、模型评估增强、低置信度复核、误判样本分析、模型管理、历史记录查看和 SQLite 数据持久化。
 
 当前仓库同时保留两套页面：
 
@@ -115,9 +115,9 @@ http://127.0.0.1:5173
 | 单文本分析 | `/predict` | 文本输入、情感标签、积极/消极概率、置信度仪表盘、分析说明 |
 | 批量分析 | `/batch` | CSV 上传、分析报告、置信度分布、文本长度分布、高频词、结果下载 |
 | 模型训练 | `/train` | 训练参数表单、任务状态、训练记录、日志入口 |
-| 模型评估 | `/evaluate` | Accuracy、Precision、Recall、F1、混淆矩阵、损失曲线、模型对比 |
-| 误判分析 | `/error-analysis` | 误判样本、真实标签/预测标签、可能原因 |
-| 复核管理 | `/review` | 低置信度文本、建议复核状态、前端筛选 |
+| 模型评估 | `/evaluate` | Accuracy、Precision、Recall、F1、Loss 曲线、混淆矩阵、分类报告，兼容旧训练结果 |
+| 低置信度复核 | `/review` | 低置信度文本、建议复核状态、来源类型、前端筛选 |
+| 误判分析 | `/error-analysis` | 疑似难判样本、可能原因、正负概率、创建时间 |
 | 模型管理 | `/models` | 模型列表、当前启用状态、启用操作、指标查看 |
 | 历史记录 | `/history` | 单文本历史、批量任务历史、训练任务历史 |
 
@@ -138,6 +138,23 @@ CSV 要求：
 storage/exports/
 ```
 
+### 模型评估页说明
+
+`/evaluate` 页面会优先展示前端统一风格的 ECharts 图表。
+
+Loss 曲线的数据来源按下面顺序处理：
+
+1. 优先读取模型目录下 `metrics.json` 中的 `train_losses` 和 `val_losses`
+2. 如果旧训练结果没有保存完整序列，则尝试从训练日志中恢复每个 epoch 的 `train_loss` 和 `val_loss`
+3. 当前端无法恢复完整序列时，才回退显示模型目录中的 `loss_curve.png`
+
+当前项目已经兼容下面两类旧日志文件：
+
+```text
+storage/logs/train_task_{id}.log
+storage/logs/train_task_{id}_manual.log
+```
+
 ### 保留的旧版页面
 
 如果需要验证原有 Jinja2 页面仍可使用，可以继续访问：
@@ -155,15 +172,16 @@ http://127.0.0.1:8000/history
 
 推荐直接使用 Vue3 新版前端按下面顺序演示：
 
-1. 打开 `/dashboard`，先介绍系统整体概况、当前启用模型、累计分析数量和图表看板。
-2. 打开 `/predict`，输入一条积极文本和一条消极文本，展示情感标签、概率条、置信度仪表盘和分析说明。
-3. 打开 `/batch`，上传 `storage/datasets/sample_batch.csv`，展示批量分析报告、饼图、柱状图和结果下载。
-4. 打开 `/evaluate`，展示 Accuracy、Precision、Recall、F1-score、混淆矩阵和损失曲线。
-5. 打开 `/error-analysis`，说明中文情感分析中情感转折、否定表达和低置信度样本带来的误判问题。
+1. 启动后端和前端，确认 `http://127.0.0.1:8000` 和 `http://127.0.0.1:5173` 可访问。
+2. 打开 `/dashboard`，先介绍系统整体概况、当前启用模型、累计分析数量和图表看板。
+3. 打开 `/predict`，输入一条积极文本和一条消极文本，展示情感标签、概率条、置信度仪表盘和分析说明。
+4. 打开 `/batch`，上传 `storage/datasets/sample_batch.csv`，展示批量分析报告、饼图、柱状图和结果下载。
+5. 打开 `/evaluate`，展示 Accuracy、Precision、Recall、F1-score、Loss 曲线、混淆矩阵和分类报告，并说明系统可兼容旧训练结果。
 6. 打开 `/review`，展示低置信度文本需要人工复核的业务意义。
-7. 打开 `/models`，说明系统支持模型注册、启用和指标对比。
-8. 打开 `/history`，展示 SQLite 持久化记录，包括单文本、批量任务和训练任务。
-9. 如果老师想看训练入口，再打开 `/train` 介绍训练参数和日志入口，不建议现场跑长时间训练。
+7. 打开 `/error-analysis`，说明中文情感分析中否定、转折和短文本问题对模型判断的影响。
+8. 打开 `/models`，说明系统支持模型注册、启用和指标对比。
+9. 打开 `/history`，展示 SQLite 持久化记录，包括单文本、批量任务和训练任务。
+10. 如果老师想看训练入口，再打开 `/train` 介绍训练参数和日志入口，不建议现场跑长时间训练。
 
 ## 4. 常见问题
 
@@ -217,6 +235,39 @@ max_length = 64
 - 文件后缀是 `.csv`
 - 编码使用 `utf-8-sig`，系统同时兼容 `utf-8`
 - 表头包含 `text` 列
+
+### 模型评估页仍显示旧图或 Loss 曲线没有更新
+
+先确认后端和前端都已经重新启动：
+
+```powershell
+# 终端 1
+cd D:\CodeProjects\dl-text-sentiment-zh
+conda activate zh_sentiment_fastapi
+python run.py
+```
+
+```powershell
+# 终端 2
+cd D:\CodeProjects\dl-text-sentiment-zh\frontend
+npm run dev
+```
+
+然后在浏览器里对评估页执行强制刷新：
+
+```text
+Ctrl + F5
+```
+
+如果 `/evaluate` 页面中的 Loss 曲线仍然不是前端图表，请检查下面几个文件是否存在：
+
+```text
+storage/models/archive/<model_dir>/metrics.json
+storage/logs/train_task_<id>.log
+storage/logs/train_task_<id>_manual.log
+```
+
+只要其中包含完整的 epoch 训练日志，前端就会自动解析并恢复为统一风格的 ECharts 曲线。
 
 ## 5. 技术栈与版本
 
@@ -337,6 +388,8 @@ GET  /api/history/analysis
 GET  /api/history/batch
 GET  /api/history/train
 ```
+
+其中 `GET /api/evaluate/latest` 用于模型评估页，返回 Accuracy、Precision、Recall、F1、Loss 曲线、混淆矩阵、训练参数和模型信息。当前前端还会在需要时结合 `GET /api/train/{task_id}/log` 或 `/storage/logs/` 下的训练日志恢复旧任务的完整 Loss 曲线。
 
 统一成功响应：
 

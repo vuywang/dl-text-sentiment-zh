@@ -49,7 +49,16 @@ const routes = [
         component: () => import('../views/Evaluate.vue'),
         meta: {
           title: '模型评估',
-          description: '查看 Accuracy、Precision、Recall、F1、混淆矩阵与损失曲线。',
+          description: '查看 Accuracy、Precision、Recall、F1、Loss 曲线、混淆矩阵和分类报告。',
+        },
+      },
+      {
+        path: 'review',
+        name: 'review',
+        component: () => import('../views/Review.vue'),
+        meta: {
+          title: '低置信度复核',
+          description: '筛选 confidence < 0.60 的记录，展示建议人工复核的预测结果。',
         },
       },
       {
@@ -58,16 +67,7 @@ const routes = [
         component: () => import('../views/ErrorAnalysis.vue'),
         meta: {
           title: '误判分析',
-          description: '聚焦误判样本与可能原因，辅助展示中文情感分析中的难点场景。',
-        },
-      },
-      {
-        path: 'review',
-        name: 'review',
-        component: () => import('../views/Review.vue'),
-        meta: {
-          title: '复核管理',
-          description: '筛选低置信度记录，为答辩演示提供人工复核视角。',
+          description: '聚焦疑似难判样本与可能原因，辅助展示中文情感分析中的难点场景。',
         },
       },
       {
