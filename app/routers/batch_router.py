@@ -1,11 +1,10 @@
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.services.batch_service import get_batch_detail, get_batch_task, process_batch_upload
+from app.utils.file_utils import resolve_storage_path
 from app.utils.response import fail, success
 
 router = APIRouter(prefix="/api/batch", tags=["batch"])
@@ -35,8 +34,8 @@ def batch_download_api(task_id: int, db: Session = Depends(get_db)):
     task = get_batch_task(db, task_id)
     if task is None or not task.result_file_path:
         return fail("批量任务结果不存在", code=2003)
-    result_path = Path(task.result_file_path)
-    if not result_path.exists():
+    result_path = resolve_storage_path(task.result_file_path)
+    if result_path is None or not result_path.exists():
         return fail("导出文件不存在", code=2004)
     return FileResponse(
         path=result_path,

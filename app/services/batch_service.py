@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.models.db.analysis_record import AnalysisRecord
 from app.models.db.batch_task import BatchTask
 from app.services.model_service import predict_text
-from app.utils.file_utils import ensure_text_column, read_csv_compatible, save_upload_file
+from app.utils.file_utils import display_path, ensure_text_column, read_csv_compatible, resolve_storage_path, save_upload_file
 from app.utils.text_utils import require_text
 from app.utils.time_utils import now_str
 
@@ -198,11 +198,11 @@ def batch_task_to_dict(task: BatchTask) -> dict[str, object]:
     return {
         "id": task.id,
         "original_file_name": task.original_file_name,
-        "saved_file_path": task.saved_file_path,
+        "saved_file_path": display_path(task.saved_file_path) or task.saved_file_path,
         "total_count": task.total_count,
         "positive_count": task.positive_count,
         "negative_count": task.negative_count,
-        "result_file_path": task.result_file_path,
+        "result_file_path": display_path(task.result_file_path) or task.result_file_path,
         "status": task.status,
         "created_at": task.created_at.strftime("%Y-%m-%d %H:%M:%S"),
     }
@@ -237,10 +237,12 @@ def get_batch_detail(db: Session, task_id: int) -> dict[str, object]:
             }
             for record in records
         ]
-    elif task.result_file_path and Path(task.result_file_path).exists():
-        df = read_csv_compatible(task.result_file_path)
-        rows = df.to_dict(orient="records")
     else:
-        rows = []
+        result_path = resolve_storage_path(task.result_file_path)
+        if result_path is not None and result_path.exists():
+            df = read_csv_compatible(result_path)
+            rows = df.to_dict(orient="records")
+        else:
+            rows = []
 
     return _build_batch_response(task, rows)

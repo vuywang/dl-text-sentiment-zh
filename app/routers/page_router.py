@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -17,7 +15,7 @@ from app.services.history_service import (
     train_task_to_dict,
 )
 from app.services.model_service import ensure_default_model, predict_text
-from app.utils.file_utils import storage_url
+from app.utils.file_utils import resolve_storage_path, storage_url
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(settings.APP_DIR / "templates"))
@@ -81,7 +79,8 @@ def evaluate_page(request: Request, db: Session = Depends(get_db)) -> HTMLRespon
     latest_task = latest_completed_train_task(db)
     latest_task_dict = train_task_to_dict(latest_task) if latest_task else None
     confusion_matrix_url = storage_url(latest_task.confusion_matrix_path) if latest_task else None
-    loss_curve_path = Path(latest_task.model_dir) / "loss_curve.png" if latest_task and latest_task.model_dir else None
+    resolved_model_dir = resolve_storage_path(latest_task.model_dir) if latest_task and latest_task.model_dir else None
+    loss_curve_path = resolved_model_dir / "loss_curve.png" if resolved_model_dir else None
     loss_curve_url = storage_url(loss_curve_path) if loss_curve_path else None
 
     sample_texts = [

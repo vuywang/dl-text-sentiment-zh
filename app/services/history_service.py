@@ -5,6 +5,7 @@ from app.models.db.analysis_record import AnalysisRecord
 from app.models.db.batch_task import BatchTask
 from app.models.db.train_task import TrainTask
 from app.services.predict_service import record_to_dict
+from app.utils.file_utils import display_path
 from app.utils.time_utils import format_datetime
 
 
@@ -12,11 +13,11 @@ def batch_task_to_dict(task: BatchTask) -> dict[str, object]:
     return {
         "id": task.id,
         "original_file_name": task.original_file_name,
-        "saved_file_path": task.saved_file_path,
+        "saved_file_path": display_path(task.saved_file_path) or task.saved_file_path,
         "total_count": task.total_count,
         "positive_count": task.positive_count,
         "negative_count": task.negative_count,
-        "result_file_path": task.result_file_path,
+        "result_file_path": display_path(task.result_file_path) or task.result_file_path,
         "status": task.status,
         "created_at": format_datetime(task.created_at),
     }
@@ -37,8 +38,8 @@ def train_task_to_dict(task: TrainTask) -> dict[str, object]:
         "precision_score": task.precision_score,
         "recall_score": task.recall_score,
         "f1_score": task.f1_score,
-        "confusion_matrix_path": task.confusion_matrix_path,
-        "model_dir": task.model_dir,
+        "confusion_matrix_path": display_path(task.confusion_matrix_path) or task.confusion_matrix_path,
+        "model_dir": display_path(task.model_dir) or task.model_dir,
         "status": task.status,
         "created_at": format_datetime(task.created_at),
         "finished_at": format_datetime(task.finished_at),

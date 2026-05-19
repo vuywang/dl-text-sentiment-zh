@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.logger import get_logger
 from app.models.db.model_registry import ModelRegistry
+from app.utils.file_utils import display_path, resolve_storage_path
 
 logger = get_logger(__name__)
 
@@ -30,11 +31,12 @@ def list_models(db: Session) -> list[ModelRegistry]:
 
 
 def model_to_dict(model: ModelRegistry) -> dict[str, object]:
+    resolved_model_dir = display_path(model.model_dir)
     return {
         "id": model.id,
         "model_name": model.model_name,
         "model_type": model.model_type,
-        "model_dir": model.model_dir,
+        "model_dir": resolved_model_dir or model.model_dir,
         "is_active": model.is_active,
         "remark": model.remark,
         "created_at": model.created_at.strftime("%Y-%m-%d %H:%M:%S"),
@@ -89,8 +91,8 @@ def ensure_default_model(db: Session) -> ModelRegistry:
 
 
 def _resolve_model_source(model_info: ModelRegistry) -> str:
-    model_dir = Path(model_info.model_dir)
-    if (model_dir / "config.json").exists():
+    model_dir = resolve_storage_path(model_info.model_dir)
+    if model_dir is not None and (model_dir / "config.json").exists():
         return str(model_dir)
     return settings.PRETRAINED_MODEL_NAME
 

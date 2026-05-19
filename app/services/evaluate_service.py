@@ -9,7 +9,7 @@ from app.models.db.model_registry import ModelRegistry
 from app.models.db.train_task import TrainTask
 from app.services.history_service import latest_completed_train_task, train_task_to_dict
 from app.services.model_service import list_models, model_to_dict
-from app.utils.file_utils import storage_url
+from app.utils.file_utils import display_path, resolve_storage_path, storage_url
 
 LOSS_LINE_PATTERN = re.compile(
     r"epoch=(?P<epoch>\d+),\s*train_loss=(?P<train_loss>[0-9.]+),\s*val_loss=(?P<val_loss>[0-9.]+)",
@@ -110,9 +110,11 @@ def _series_from_log(task_id: int) -> tuple[list[float], list[float]]:
 
 def _resolve_path(path_value: object, fallback: Path | None = None) -> str | None:
     if isinstance(path_value, str) and path_value.strip():
-        return path_value
+        resolved = display_path(path_value)
+        return resolved or path_value
     if fallback is not None:
-        return str(fallback)
+        resolved = display_path(fallback)
+        return resolved or str(fallback)
     return None
 
 
@@ -180,14 +182,14 @@ def _build_classification_report(
 
 
 def _model_metrics_payload(model: ModelRegistry, train_task: TrainTask | None) -> dict[str, object]:
-    model_dir = Path(model.model_dir)
-    metrics = _read_json(model_dir / "metrics.json")
+    model_dir = resolve_storage_path(model.model_dir)
+    metrics = _read_json(model_dir / "metrics.json" if model_dir else None)
     accuracy = _first_defined(train_task.accuracy if train_task else None, metrics.get("accuracy"))
     precision = _first_defined(train_task.precision_score if train_task else None, metrics.get("precision_score"))
     recall = _first_defined(train_task.recall_score if train_task else None, metrics.get("recall_score"))
     f1_score = _first_defined(train_task.f1_score if train_task else None, metrics.get("f1_score"))
-    confusion_path = _resolve_path(metrics.get("confusion_matrix_path"), model_dir / "confusion_matrix.png")
-    loss_path = _resolve_path(metrics.get("loss_curve_path"), model_dir / "loss_curve.png")
+    confusion_path = _resolve_path(metrics.get("confusion_matrix_path"), model_dir / "confusion_matrix.png" if model_dir else None)
+    loss_path = _resolve_path(metrics.get("loss_curve_path"), model_dir / "loss_curve.png" if model_dir else None)
     return {
         **model_to_dict(model),
         "accuracy": _round_metric(accuracy),
@@ -245,7 +247,7 @@ def get_latest_evaluation(db: Session) -> dict[str, object]:
             "model_comparison": comparison_models,
         }
 
-    model_dir = Path(latest_task.model_dir) if latest_task.model_dir else None
+    model_dir = resolve_storage_path(latest_task.model_dir) if latest_task.model_dir else None
     metrics = _read_json(model_dir / "metrics.json" if model_dir else None)
     train_config = _read_json(model_dir / "train_config.json" if model_dir else None)
 
@@ -267,7 +269,11 @@ def get_latest_evaluation(db: Session) -> dict[str, object]:
     if not isinstance(confusion_matrix, list):
         confusion_matrix = []
 
-    confusion_path = _resolve_path(metrics.get("confusion_matrix_path"), Path(latest_task.confusion_matrix_path) if latest_task.confusion_matrix_path else (model_dir / "confusion_matrix.png" if model_dir else None))
+    confusion_fallback = resolve_storage_path(latest_task.confusion_matrix_path) if latest_task.confusion_matrix_path else None
+    confusion_path = _resolve_path(
+        metrics.get("confusion_matrix_path"),
+        confusion_fallback or (model_dir / "confusion_matrix.png" if model_dir else None),
+    )
     loss_path = _resolve_path(metrics.get("loss_curve_path"), model_dir / "loss_curve.png" if model_dir else None)
 
     return {
@@ -317,7 +323,7 @@ def get_latest_evaluation(db: Session) -> dict[str, object]:
         "model_comparison": comparison_models,
         "model_info": {
             "model_name": latest_task.model_name,
-            "model_dir": latest_task.model_dir,
+            "model_dir": display_path(latest_task.model_dir) or latest_task.model_dir,
             "dataset_name": latest_task.dataset_name,
             "pretrained_model": train_config.get("pretrained_model"),
         },

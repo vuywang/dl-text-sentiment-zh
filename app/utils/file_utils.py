@@ -44,10 +44,39 @@ def ensure_text_column(df: pd.DataFrame) -> None:
         raise ValueError("CSV 文件必须包含 text 列")
 
 
-def storage_url(path: str | Path | None) -> str | None:
+def resolve_storage_path(path: str | Path | None) -> Path | None:
     if not path:
         return None
-    resolved = Path(path).resolve()
+
+    raw_path = Path(path).expanduser()
+    if raw_path.exists():
+        return raw_path.resolve()
+
+    raw_parts = list(raw_path.parts)
+    lower_parts = [part.lower() for part in raw_parts]
+
+    if "storage" in lower_parts:
+        storage_index = lower_parts.index("storage")
+        mapped_path = settings.STORAGE_DIR.joinpath(*raw_parts[storage_index + 1 :])
+        return mapped_path.resolve()
+
+    if not raw_path.is_absolute():
+        mapped_path = (settings.BASE_DIR / raw_path).resolve()
+        if mapped_path.exists():
+            return mapped_path
+
+    return raw_path.resolve()
+
+
+def display_path(path: str | Path | None) -> str | None:
+    resolved = resolve_storage_path(path)
+    return str(resolved) if resolved is not None else None
+
+
+def storage_url(path: str | Path | None) -> str | None:
+    resolved = resolve_storage_path(path)
+    if resolved is None:
+        return None
     try:
         rel_path = resolved.relative_to(settings.STORAGE_DIR.resolve())
     except ValueError:
