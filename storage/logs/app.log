@@ -524,3 +524,4 @@ TypeError: cannot use 'tuple' as a dict key (unhashable type: 'dict')
 2026-05-19 22:09:40 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928
 2026-05-19 22:20:02 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928
 2026-05-19 22:22:27 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928
+2026-05-19 23:05:32 [INFO] app.services.model_service - 加载当前激活模型：D:\CodeProjects\dl-text-sentiment-zh\storage\models\archive\task_2_20260415_222928

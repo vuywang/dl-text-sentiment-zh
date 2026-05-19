@@ -144,18 +144,9 @@ storage/exports/
 
 `/evaluate` 页面会优先展示前端统一风格的 ECharts 图表。
 
-Loss 曲线的数据来源按下面顺序处理：
+当前答辩版前端已经将 Loss 曲线固定为一组真实训练结果对应的 30 轮 `train_loss / val_loss` 序列，用于保证不同电脑、不同目录位置下的展示效果一致，不再依赖旧模型目录中的 `loss_curve.png` 图片是否存在。
 
-1. 优先读取模型目录下 `metrics.json` 中的 `train_losses` 和 `val_losses`
-2. 如果旧训练结果没有保存完整序列，则尝试从训练日志中恢复每个 epoch 的 `train_loss` 和 `val_loss`
-3. 当前端无法恢复完整序列时，才回退显示模型目录中的 `loss_curve.png`
-
-当前项目已经兼容下面两类旧日志文件：
-
-```text
-storage/logs/train_task_{id}.log
-storage/logs/train_task_{id}_manual.log
-```
+Accuracy、Precision、Recall、F1、混淆矩阵、分类报告和模型信息仍然继续从后端接口读取。
 
 ### 保留的旧版页面
 
@@ -261,15 +252,11 @@ npm run dev
 Ctrl + F5
 ```
 
-如果 `/evaluate` 页面中的 Loss 曲线仍然不是前端图表，请检查下面几个文件是否存在：
+如果 `/evaluate` 页面中的混淆矩阵或模型信息没有更新，请检查下面几个文件是否存在：
 
 ```text
 storage/models/archive/<model_dir>/metrics.json
-storage/logs/train_task_<id>.log
-storage/logs/train_task_<id>_manual.log
 ```
-
-只要其中包含完整的 epoch 训练日志，前端就会自动解析并恢复为统一风格的 ECharts 曲线。
 
 ## 5. 技术栈与版本
 
@@ -391,7 +378,7 @@ GET  /api/history/batch
 GET  /api/history/train
 ```
 
-其中 `GET /api/evaluate/latest` 用于模型评估页，返回 Accuracy、Precision、Recall、F1、Loss 曲线、混淆矩阵、训练参数和模型信息。当前前端还会在需要时结合 `GET /api/train/{task_id}/log` 或 `/storage/logs/` 下的训练日志恢复旧任务的完整 Loss 曲线。
+其中 `GET /api/evaluate/latest` 用于模型评估页，返回 Accuracy、Precision、Recall、F1、混淆矩阵、训练参数和模型信息。当前答辩版前端会固定展示一组真实训练结果对应的 Loss 曲线，以保证跨电脑演示时风格统一、展示稳定。
 
 统一成功响应：
 

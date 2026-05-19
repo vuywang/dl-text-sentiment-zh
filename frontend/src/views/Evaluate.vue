@@ -8,11 +8,15 @@ import {
 } from '@element-plus/icons-vue'
 import { computed, onMounted, ref } from 'vue'
 import { getLatestEvaluation } from '../api/evaluate'
-import { getTrainLog } from '../api/train'
 import ChartCard from '../components/ChartCard.vue'
 import PageHeader from '../components/PageHeader.vue'
 import StatCard from '../components/StatCard.vue'
 import { formatDecimal, formatPercent } from '../utils/format'
+
+const FIXED_LOSS_SERIES = {
+  train_losses: [0.721109, 0.55848, 0.323515, 0.118194, 0.04099, 0.019359, 0.008442, 0.004628, 0.003004, 0.00255, 0.00202, 0.001642, 0.001267, 0.000893, 0.000793, 0.00068, 0.000523, 0.000456, 0.000406, 0.00042, 0.000368, 0.000303, 0.0003, 0.000269, 0.000262, 0.000233, 0.000232, 0.00021, 0.000192, 0.000184],
+  val_losses: [0.6206, 0.53127, 0.352622, 0.422766, 0.613057, 0.777477, 0.796806, 0.816475, 0.849839, 0.886438, 0.919893, 0.954666, 0.987661, 1.021179, 1.04666, 1.072656, 1.094283, 1.110267, 1.124737, 1.138487, 1.15485, 1.167947, 1.180451, 1.192408, 1.201538, 1.212272, 1.220873, 1.230533, 1.239479, 1.247537],
+}
 
 const loading = ref(false)
 const evaluation = ref({
@@ -22,8 +26,8 @@ const evaluation = ref({
   f1_score: null,
   train_loss: null,
   val_loss: null,
-  train_losses: [],
-  val_losses: [],
+  train_losses: [...FIXED_LOSS_SERIES.train_losses],
+  val_losses: [...FIXED_LOSS_SERIES.val_losses],
   confusion_matrix: [],
   confusion_matrix_url: null,
   loss_curve_url: null,
@@ -39,87 +43,20 @@ const evaluation = ref({
   model_info: {},
 })
 
-function parseLossSeriesFromLog(content) {
-  const text = String(content || '')
-  const pattern = /epoch=(\d+),\s*train_loss=([0-9.]+),\s*val_loss=([0-9.]+)/g
-  const rows = []
-  let matched = pattern.exec(text)
-
-  while (matched) {
-    rows.push({
-      epoch: Number(matched[1]),
-      trainLoss: Number(matched[2]),
-      valLoss: Number(matched[3]),
-    })
-    matched = pattern.exec(text)
-  }
-
-  rows.sort((left, right) => left.epoch - right.epoch)
-
-  return {
-    train_losses: rows.map((item) => Number(item.trainLoss.toFixed(6))),
-    val_losses: rows.map((item) => Number(item.valLoss.toFixed(6))),
-  }
-}
-
-async function loadTrainLogContent(taskId) {
-  try {
-    const logData = await getTrainLog(taskId)
-    if (logData?.content) {
-      return logData.content
-    }
-  } catch {
-    // Ignore API failure and continue to static log fallback.
-  }
-
-  const candidatePaths = [
-    `/storage/logs/train_task_${taskId}.log`,
-    `/storage/logs/train_task_${taskId}_manual.log`,
-  ]
-
-  for (const path of candidatePaths) {
-    try {
-      const response = await fetch(path)
-      if (!response.ok) {
-        continue
-      }
-      const text = await response.text()
-      if (text.trim()) {
-        return text
-      }
-    } catch {
-      // Continue to the next candidate path.
-    }
-  }
-
-  return ''
-}
-
 async function loadEvaluation() {
   loading.value = true
   try {
     const data = await getLatestEvaluation()
-
-    const trainSeries = data.train_losses || []
-    const valSeries = data.val_losses || []
-    const needsLogFallback = (trainSeries.length <= 1 || valSeries.length <= 1) && data.latest_task?.id
-
-    if (needsLogFallback) {
-      try {
-        const logContent = await loadTrainLogContent(data.latest_task.id)
-        const parsedSeries = parseLossSeriesFromLog(logContent)
-        if (parsedSeries.train_losses.length > 1 && parsedSeries.val_losses.length > 1) {
-          data.train_losses = parsedSeries.train_losses
-          data.val_losses = parsedSeries.val_losses
-          data.loss_series = parsedSeries
-          data.loss_series_source = 'train_log_fallback'
-        }
-      } catch {
-        // Keep the original payload when log fallback is unavailable.
-      }
+    evaluation.value = {
+      ...data,
+      train_losses: [...FIXED_LOSS_SERIES.train_losses],
+      val_losses: [...FIXED_LOSS_SERIES.val_losses],
+      loss_series: {
+        train_losses: [...FIXED_LOSS_SERIES.train_losses],
+        val_losses: [...FIXED_LOSS_SERIES.val_losses],
+      },
+      loss_series_source: 'frontend_fixed_demo',
     }
-
-    evaluation.value = data
   } finally {
     loading.value = false
   }
@@ -195,7 +132,6 @@ const epochLabels = computed(() => {
 
 const hasLossSeries = computed(() => epochLabels.value.length > 1)
 const hasConfusionMatrix = computed(() => (evaluation.value.confusion_matrix || []).length > 0)
-const showLossImageFallback = computed(() => !hasLossSeries.value && Boolean(evaluation.value.loss_curve_url))
 const showMatrixImageFallback = computed(() => !hasConfusionMatrix.value && Boolean(evaluation.value.confusion_matrix_url))
 
 const lossOption = computed(() => ({
@@ -321,17 +257,11 @@ onMounted(loadEvaluation)
     <div class="chart-grid">
       <ChartCard
         title="训练 / 验证 Loss 曲线"
-        description="优先使用 metrics.json 中的训练损失序列；若旧任务缺失序列，则显示已有曲线图片。"
-        :option="hasLossSeries ? lossOption : null"
+        description="固定展示当前答辩演示使用的 30 轮训练结果曲线，确保不同电脑上的页面风格和展示效果一致。"
+        :option="lossOption"
         :loading="loading"
-        :empty="!hasLossSeries && !showLossImageFallback"
-      >
-        <el-image v-if="showLossImageFallback" :src="evaluation.loss_curve_url" fit="contain" class="image-view">
-          <template #error>
-            <div class="image-empty">Loss 曲线图片不存在</div>
-          </template>
-        </el-image>
-      </ChartCard>
+        :empty="false"
+      />
 
       <ChartCard
         title="混淆矩阵"
