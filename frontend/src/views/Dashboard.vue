@@ -173,7 +173,6 @@ onMounted(loadData)
   <div class="page-grid">
     <PageHeader
       title="中文情感分析可视化看板"
-      description="从整体业务量、模型效果、近期任务和实时记录四个维度展示系统运行状态，适合毕业设计答辩中的首页总览。"
       tag="System Dashboard"
     >
       <div class="header-meta">
@@ -266,7 +265,6 @@ onMounted(loadData)
         <div class="overview-panel__head">
           <div>
             <h3>答辩展示提示</h3>
-            <p>推荐先讲系统规模，再切换到具体分析页展示预测效果。</p>
           </div>
           <el-icon class="overview-panel__head-icon"><Cpu /></el-icon>
         </div>
