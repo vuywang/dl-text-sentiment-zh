@@ -90,11 +90,7 @@ onBeforeUnmount(() => {
       description="保留原有 FastAPI 训练逻辑，通过可视化表单、状态卡片和日志入口增强答辩展示效果。"
       tag="Training Center"
     >
-      <el-alert
-        title="建议答辩时使用 epoch=1、batch_size=8、max_length=64 进行演示，不建议现场长时间训练。"
-        type="warning"
-        :closable="false"
-      />
+
     </PageHeader>
 
     <div class="two-col-grid">
