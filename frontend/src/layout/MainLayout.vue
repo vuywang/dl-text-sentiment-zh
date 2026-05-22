@@ -14,6 +14,8 @@ import {
 } from '@element-plus/icons-vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import campusBg from '../assets/branding/campus-bg.jpg'
+import schoolBadgeName from '../assets/branding/school-badge-name.png'
 import { useAppStore } from '../stores/app'
 
 const appStore = useAppStore()
@@ -60,7 +62,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="shell">
+  <div class="shell" :style="{ '--campus-bg': `url(${campusBg})` }">
     <aside class="sidebar card-panel">
       <div class="brand">
         <div class="brand__badge">NLP</div>
@@ -91,12 +93,13 @@ onBeforeUnmount(() => {
 
     <section class="main">
       <header class="topbar card-panel">
-        <div class="topbar__left">
-          <el-button text @click="appStore.toggleSidebar()">切换导航</el-button>
-          <div class="topbar__title">
-            <h1>{{ currentMeta.title || '中文情感分析可视化系统' }}</h1>
-            <p>{{ currentMeta.description || '面向本科毕业设计答辩的分析展示前端。' }}</p>
-          </div>
+        <el-button class="topbar__toggle" text @click="appStore.toggleSidebar()">切换导航</el-button>
+        <div class="topbar__title">
+          <h1>{{ currentMeta.title || '中文情感分析可视化系统' }}</h1>
+          <p>{{ currentMeta.description || '面向本科毕业设计答辩的分析展示前端。' }}</p>
+        </div>
+        <div class="topbar__brandmark" aria-hidden="true">
+          <img :src="schoolBadgeName" alt="华北师范大学校徽校名" />
         </div>
         <div class="topbar__right">
           <div class="topbar__pill">
@@ -125,14 +128,39 @@ onBeforeUnmount(() => {
 <style scoped>
 .shell {
   min-height: 100vh;
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 24px;
   padding: 24px;
+  background: var(--app-bg);
+  overflow: hidden;
+}
+
+.shell::before,
+.shell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.shell::before {
+  z-index: 0;
+  background: var(--campus-bg) center top / cover no-repeat;
+  opacity: 0.58;
+  transform: scale(1.04);
+  transform-origin: center;
+  filter: saturate(1.08) contrast(1.04);
+}
+
+.shell::after {
+  z-index: 0;
   background:
-    radial-gradient(circle at top left, rgba(58, 123, 213, 0.18), transparent 28%),
-    radial-gradient(circle at right 20%, rgba(83, 105, 248, 0.16), transparent 24%),
-    var(--app-bg);
+    linear-gradient(180deg, rgba(245, 247, 251, 0.58), rgba(245, 247, 251, 0.5)),
+    radial-gradient(circle at top left, rgba(58, 123, 213, 0.1), transparent 32%),
+    radial-gradient(circle at right 20%, rgba(83, 105, 248, 0.09), transparent 28%);
 }
 
 .sidebar {
@@ -227,19 +255,18 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
-.topbar {
-  padding: 18px 22px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+.sidebar,
+.main {
+  position: relative;
+  z-index: 1;
 }
 
-.topbar__left {
-  display: flex;
+.topbar {
+  padding: 18px 22px;
+  display: grid;
+  grid-template-columns: auto minmax(260px, 1fr) minmax(220px, 320px) auto;
   align-items: center;
   gap: 16px;
-  min-width: 0;
 }
 
 .topbar__title h1 {
@@ -249,10 +276,39 @@ onBeforeUnmount(() => {
   color: var(--text-primary);
 }
 
+.topbar__title {
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
 .topbar__title p {
   margin: 6px 0 0;
   color: var(--text-secondary);
   font-size: 13px;
+}
+
+.topbar__toggle {
+  position: relative;
+  z-index: 1;
+  justify-self: start;
+}
+
+.topbar__brandmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  pointer-events: none;
+}
+
+.topbar__brandmark img {
+  display: block;
+  width: 100%;
+  max-height: 48px;
+  object-fit: contain;
+  opacity: 0.88;
+  filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.08));
 }
 
 .topbar__right {
@@ -261,6 +317,8 @@ onBeforeUnmount(() => {
   gap: 14px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  position: relative;
+  z-index: 1;
 }
 
 .topbar__pill {
@@ -314,8 +372,21 @@ onBeforeUnmount(() => {
   }
 
   .topbar {
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .topbar__brandmark {
+    position: static;
+    transform: none;
+    width: min(72vw, 340px);
+    margin: 0 auto;
+    align-self: center;
+  }
+
+  .topbar__brandmark img {
+    max-height: 52px;
   }
 
   .topbar__right {

@@ -1,6 +1,6 @@
 :root {
   --app-bg: #f5f7fb;
-  --card-bg: rgba(255, 255, 255, 0.94);
+  --card-bg: rgba(255, 255, 255, 0.78);
   --border-color: rgba(148, 163, 184, 0.18);
   --text-primary: #0f172a;
   --text-secondary: #64748b;
@@ -8,7 +8,7 @@
   --success-color: #16a34a;
   --danger-color: #ef4444;
   --warning-color: #f59e0b;
-  --shadow-color: 0 18px 45px rgba(15, 23, 42, 0.08);
+  --shadow-color: 0 18px 45px rgba(15, 23, 42, 0.06);
   --heading-font: "Bahnschrift", "DIN Alternate", "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
   --body-font: "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
   --number-font: "Bahnschrift", "DIN Alternate", "Segoe UI", sans-serif;

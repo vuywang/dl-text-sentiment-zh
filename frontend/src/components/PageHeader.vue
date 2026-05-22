@@ -37,7 +37,7 @@ defineProps({
   padding: 24px;
   margin-bottom: 22px;
   background:
-    linear-gradient(135deg, rgba(47, 107, 255, 0.12), rgba(255, 255, 255, 0.96)),
+    linear-gradient(135deg, rgba(47, 107, 255, 0.16), rgba(255, 255, 255, 0.74)),
     #ffffff;
 }
 

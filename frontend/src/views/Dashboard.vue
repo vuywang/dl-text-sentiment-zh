@@ -395,7 +395,7 @@ onMounted(loadData)
   padding: 12px 16px;
   min-width: 180px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.58);
 }
 
 .header-meta__item span {
@@ -446,7 +446,7 @@ onMounted(loadData)
 .overview-block {
   padding: 18px;
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(245, 247, 251, 0.9), rgba(255, 255, 255, 0.96));
+  background: linear-gradient(180deg, rgba(245, 247, 251, 0.72), rgba(255, 255, 255, 0.62));
   border: 1px solid rgba(148, 163, 184, 0.15);
 }
 
@@ -479,7 +479,7 @@ onMounted(loadData)
 .overview-tip {
   padding: 18px;
   border-radius: 20px;
-  background: linear-gradient(90deg, rgba(47, 107, 255, 0.12), rgba(87, 163, 255, 0.04));
+  background: linear-gradient(90deg, rgba(47, 107, 255, 0.16), rgba(87, 163, 255, 0.08));
 }
 
 .overview-tip strong {
