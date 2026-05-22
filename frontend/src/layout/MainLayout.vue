@@ -14,13 +14,13 @@ import {
 } from '@element-plus/icons-vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import campusBg from '../assets/branding/campus-bg.jpg'
-import schoolBadgeName from '../assets/branding/school-badge-name.png'
 import { useAppStore } from '../stores/app'
 
 const appStore = useAppStore()
 const route = useRoute()
 const nowText = ref('')
+const campusBg = '/branding/campus-bg.jpg'
+const schoolBadgeName = '/branding/school-badge-name.png'
 
 const menuItems = [
   { path: '/dashboard', label: '首页看板', icon: DataAnalysis },
@@ -62,7 +62,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="shell" :style="{ '--campus-bg': `url(${campusBg})` }">
+  <div class="shell">
+    <div class="shell__backdrop" aria-hidden="true">
+      <img :src="campusBg" alt="" />
+    </div>
+    <div class="shell__overlay" aria-hidden="true"></div>
     <aside class="sidebar card-panel">
       <div class="brand">
         <div class="brand__badge">NLP</div>
@@ -138,25 +142,30 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.shell::before,
-.shell::after {
-  content: '';
+.shell__backdrop,
+.shell__overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-.shell::before {
+.shell__backdrop {
   z-index: 0;
-  background: var(--campus-bg) center top / cover no-repeat;
+}
+
+.shell__backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
   opacity: 0.58;
   transform: scale(1.04);
   transform-origin: center;
   filter: saturate(1.08) contrast(1.04);
 }
 
-.shell::after {
-  z-index: 0;
+.shell__overlay {
+  z-index: 1;
   background:
     linear-gradient(180deg, rgba(245, 247, 251, 0.58), rgba(245, 247, 251, 0.5)),
     radial-gradient(circle at top left, rgba(58, 123, 213, 0.1), transparent 32%),
@@ -258,7 +267,7 @@ onBeforeUnmount(() => {
 .sidebar,
 .main {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .topbar {
